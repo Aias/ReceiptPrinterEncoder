@@ -1,9 +1,9 @@
 import TextStyle from './text-style.js';
 import TextWrap from './text-wrap.js';
 
-type Alignment = 'left' | 'center' | 'right';
-type StyleProperty = 'bold' | 'italic' | 'underline' | 'invert';
-type Size = { width: number; height: number };
+export type Alignment = 'left' | 'center' | 'right';
+export type StyleProperty = 'bold' | 'italic' | 'underline' | 'invert';
+export type Size = { width: number; height: number };
 
 export type TextItem = {
 	type: 'text';

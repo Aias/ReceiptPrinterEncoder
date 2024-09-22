@@ -5,6 +5,10 @@
 		"moduleResolution": "node",
 		"outDir": "./dist",
 		"rootDir": "./",
+		"baseUrl": "./",
+		"paths": {
+			"@printers": ["./src/types/printers.d.ts"]
+		},
 		"strict": true,
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
