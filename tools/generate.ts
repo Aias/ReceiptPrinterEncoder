@@ -31,18 +31,16 @@ function generatePrinters() {
 	}
 
 	output += '};\n\n';
-
 	output += 'export default printerDefinitions;\n';
 
 	fs.writeFileSync('generated/printers.ts', output, 'utf8');
 }
 
 function generateMappings() {
-	let output = '';
-	output += `const codepageMappings = {\n`;
+	const codepageMappings: { [key: string]: any } = {};
 
 	try {
-		output += `\t'esc-pos': {\n`;
+		codepageMappings['esc-pos'] = {};
 
 		let files = fs.readdirSync('data/mappings/esc-pos');
 
@@ -51,7 +49,7 @@ function generateMappings() {
 			let lines = data.split('\n');
 
 			let name = file.replace(/\.txt$/, '').replace(/-legacy/g, '/legacy');
-			let list = new Map();
+			let list = new Map<number, string>();
 
 			for (let line of lines) {
 				if (line.length > 1 && line.charAt(0) != '#') {
@@ -60,22 +58,23 @@ function generateMappings() {
 				}
 			}
 
-			let mapping = new Array(Math.max(...list.keys()));
+			let mapping = new Array(Math.max(...list.keys()) + 1).fill(null).map((_, idx) => list.get(idx) || null);
 
-			for (let [key, value] of list) {
-				mapping[key] = value;
-			}
-
-			output += `\t\t'${name}': ${stringify(mapping)},\n`;
+			codepageMappings['esc-pos'][name] = mapping;
 		}
 
-		output += `\t},\n`;
+		// Adding 'zijang' as an alias to 'pos-5890'
+		if (codepageMappings['esc-pos']['pos-5890']) {
+			codepageMappings['esc-pos']['zijang'] = codepageMappings['esc-pos']['pos-5890'];
+		} else {
+			console.warn("Alias 'zijang' could not be created because 'pos-5890' mapping does not exist.");
+		}
 	} catch (err) {
 		console.error(err);
 	}
 
 	try {
-		output += `\t'star-prnt': {\n`;
+		codepageMappings['star-prnt'] = {};
 
 		let files = fs.readdirSync('data/mappings/star-prnt');
 
@@ -84,7 +83,7 @@ function generateMappings() {
 			let lines = data.split('\n');
 
 			let name = file.replace(/\.txt$/, '').replace(/-legacy/g, '/legacy');
-			let list = new Map();
+			let list = new Map<number, string>();
 
 			for (let line of lines) {
 				if (line.length > 1 && line.charAt(0) != '#') {
@@ -93,25 +92,24 @@ function generateMappings() {
 				}
 			}
 
-			let mapping = new Array(Math.max(...list.keys()));
+			let mapping = new Array(Math.max(...list.keys()) + 1).fill(null).map((_, idx) => list.get(idx) || null);
 
-			for (let [key, value] of list) {
-				mapping[key] = value;
-			}
-
-			output += `\t\t'${name}': ${stringify(mapping)},\n`;
+			codepageMappings['star-prnt'][name] = mapping;
 		}
 
-		output += '\t}\n';
+		// Adding 'star-line' as an alias to 'star-prnt'
+		if (codepageMappings['star-prnt']) {
+			codepageMappings['star-line'] = codepageMappings['star-prnt'];
+		} else {
+			console.warn("Alias 'star-line' could not be created because 'star-prnt' mapping does not exist.");
+		}
 	} catch (err) {
 		console.error(err);
 	}
 
-	output += '};\n\n';
+	const mappingString = stringify(codepageMappings, null, 2);
 
-	output += "codepageMappings['star-line'] = codepageMappings['star-prnt'];\n";
-	output += "codepageMappings['esc-pos']['zijang'] = codepageMappings['esc-pos']['pos-5890'];\n\n";
-	output += 'export default codepageMappings;\n';
+	const output = `const codepageMappings = ${mappingString};\n\nexport default codepageMappings;\n`;
 
 	fs.writeFileSync('generated/mapping.ts', output, 'utf8');
 }
