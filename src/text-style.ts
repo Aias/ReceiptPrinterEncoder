@@ -1,20 +1,10 @@
-interface TextStyleOptions {
-	callback: (event: StyleEvent) => void;
+import type { StyleItem } from './line-composer';
+
+export interface TextStyleOptions {
+	callback: (event: StyleItem) => void;
 }
 
-type StyleEvent =
-	| {
-			type: 'style';
-			property: 'bold' | 'italic' | 'underline' | 'invert';
-			value: boolean;
-	  }
-	| {
-			type: 'style';
-			property: 'size';
-			value: { width: number; height: number };
-	  };
-
-interface TextStyleProperties {
+export interface TextStyleProperties {
 	bold: boolean;
 	italic: boolean;
 	underline: boolean;
@@ -37,7 +27,7 @@ class TextStyle {
 	};
 
 	#current: TextStyleProperties;
-	#callback: (event: StyleEvent) => void;
+	#callback: (event: StyleItem) => void;
 
 	/**
 	 * Create a new TextStyle object
@@ -54,8 +44,8 @@ class TextStyle {
 	 *
 	 * @return {array}   Array of modified properties
 	 */
-	store(): StyleEvent[] {
-		const result: StyleEvent[] = [];
+	store(): StyleItem[] {
+		const result: StyleItem[] = [];
 
 		for (const property in this.#current) {
 			const key = property as keyof TextStyleProperties;
@@ -68,13 +58,13 @@ class TextStyle {
 						type: 'style',
 						property: 'size',
 						value: { width: defaultValue as number, height: defaultValue as number }
-					} as StyleEvent);
+					} as StyleItem);
 				} else {
 					result.push({
 						type: 'style',
 						property: key,
 						value: defaultValue as boolean
-					} as StyleEvent);
+					} as StyleItem);
 				}
 			}
 		}
@@ -87,8 +77,8 @@ class TextStyle {
 	 *
 	 * @return {array}   Array of modified properties
 	 */
-	restore(): StyleEvent[] {
-		const result: StyleEvent[] = [];
+	restore(): StyleItem[] {
+		const result: StyleItem[] = [];
 
 		for (const property in this.#current) {
 			const key = property as keyof TextStyleProperties;
@@ -101,13 +91,13 @@ class TextStyle {
 						type: 'style',
 						property: 'size',
 						value: { width: currentValue as number, height: currentValue as number }
-					} as StyleEvent);
+					} as StyleItem);
 				} else {
 					result.push({
 						type: 'style',
 						property: key,
 						value: currentValue as boolean
-					} as StyleEvent);
+					} as StyleItem);
 				}
 			}
 		}
