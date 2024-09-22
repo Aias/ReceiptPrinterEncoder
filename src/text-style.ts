@@ -1,247 +1,275 @@
+interface TextStyleOptions {
+	callback: (event: StyleEvent) => void;
+}
+
+type StyleEvent =
+	| {
+			type: 'style';
+			property: 'bold' | 'italic' | 'underline' | 'invert';
+			value: boolean;
+	  }
+	| {
+			type: 'style';
+			property: 'size';
+			value: { width: number; height: number };
+	  };
+
+interface TextStyleProperties {
+	bold: boolean;
+	italic: boolean;
+	underline: boolean;
+	invert: boolean;
+	width: number;
+	height: number;
+}
 
 /**
  * Store and manage text styles
  */
 class TextStyle {
-  #default = {
-    bold: false,
-    italic: false,
-    underline: false,
-    invert: false,
-    width: 1,
-    height: 1,
-  };
+	#default: TextStyleProperties = {
+		bold: false,
+		italic: false,
+		underline: false,
+		invert: false,
+		width: 1,
+		height: 1
+	};
 
-  #current;
-  #callback;
+	#current: TextStyleProperties;
+	#callback: (event: StyleEvent) => void;
 
-  /**
-     * Create a new TextStyle object
-     *
-     * @param  {object}   options   Object containing configuration options
-     */
-  constructor(options) {
-    this.#current = structuredClone(this.#default);
-    this.#callback = options.callback || (() => {});
-  }
+	/**
+	 * Create a new TextStyle object
+	 *
+	 * @param  {object}   options   Object containing configuration options
+	 */
+	constructor(options: TextStyleOptions) {
+		this.#current = structuredClone(this.#default);
+		this.#callback = options.callback || (() => {});
+	}
 
-  /**
-     * Return commands to get to the default style from the current style
-     *
-     * @return {array}   Array of modified properties
-     */
-  store() {
-    const result = [];
+	/**
+	 * Return commands to get to the default style from the current style
+	 *
+	 * @return {array}   Array of modified properties
+	 */
+	store(): StyleEvent[] {
+		const result: StyleEvent[] = [];
 
-    const properties = new Map();
+		for (const property in this.#current) {
+			const key = property as keyof TextStyleProperties;
+			const currentValue = this.#current[key];
+			const defaultValue = this.#default[key];
 
-    for (const property in this.#current) {
-      if (this.#current[property] !== this.#default[property]) {
-        if (property === 'width' || property === 'height') {
-          properties.set('size', {width: this.#default.width, height: this.#default.height});
-        } else {
-          properties.set(property, this.#default[property]);
-        }
-      }
-    }
+			if (currentValue !== defaultValue) {
+				if (key === 'width' || key === 'height') {
+					result.push({
+						type: 'style',
+						property: 'size',
+						value: { width: defaultValue as number, height: defaultValue as number }
+					} as StyleEvent);
+				} else {
+					result.push({
+						type: 'style',
+						property: key,
+						value: defaultValue as boolean
+					} as StyleEvent);
+				}
+			}
+		}
 
-    for (const property of properties) {
-      result.push({
-        type: 'style',
-        property: property[0],
-        value: property[1],
-      });
-    }
+		return result;
+	}
 
-    return result;
-  }
+	/**
+	 * Return commands to get to the current style from the default style
+	 *
+	 * @return {array}   Array of modified properties
+	 */
+	restore(): StyleEvent[] {
+		const result: StyleEvent[] = [];
 
-  /**
-     * Return commands to get to the current style from the default style
-     *
-     * @return {array}   Array of modified properties
-     */
-  restore() {
-    const result = [];
+		for (const property in this.#current) {
+			const key = property as keyof TextStyleProperties;
+			const currentValue = this.#current[key];
+			const defaultValue = this.#default[key];
 
-    const properties = new Map();
+			if (currentValue !== defaultValue) {
+				if (key === 'width' || key === 'height') {
+					result.push({
+						type: 'style',
+						property: 'size',
+						value: { width: currentValue as number, height: currentValue as number }
+					} as StyleEvent);
+				} else {
+					result.push({
+						type: 'style',
+						property: key,
+						value: currentValue as boolean
+					} as StyleEvent);
+				}
+			}
+		}
 
-    for (const property in this.#current) {
-      if (this.#current[property] !== this.#default[property]) {
-        if (property === 'width' || property === 'height') {
-          properties.set('size', {width: this.#current.width, height: this.#current.height});
-        } else {
-          properties.set(property, this.#current[property]);
-        }
-      }
-    }
+		return result;
+	}
 
-    for (const property of properties) {
-      result.push({
-        type: 'style',
-        property: property[0],
-        value: property[1],
-      });
-    }
+	/**
+	 * Set the bold property
+	 *
+	 * @param  {boolean}   value   Is bold enabled, or not?
+	 */
+	set bold(value: boolean) {
+		if (value !== this.#current.bold) {
+			this.#current.bold = value;
 
-    return result;
-  }
+			this.#callback({
+				type: 'style',
+				property: 'bold',
+				value
+			});
+		}
+	}
 
-  /**
-     * Set the bold property
-     *
-     * @param  {boolean}   value   Is bold enabled, or not?
-     */
-  set bold(value) {
-    if (value !== this.#current.bold) {
-      this.#current.bold = value;
+	/**
+	 * Get the bold property
+	 *
+	 * @return {boolean}   Is bold enabled, or not?
+	 */
+	get bold(): boolean {
+		return this.#current.bold;
+	}
 
-      this.#callback({
-        type: 'style',
-        property: 'bold',
-        value,
-      });
-    }
-  }
+	/**
+	 * Set the italic property
+	 *
+	 * @param  {boolean}   value   Is italic enabled, or not?
+	 */
+	set italic(value: boolean) {
+		if (value !== this.#current.italic) {
+			this.#current.italic = value;
 
-  /**
-     * Get the bold property
-     *
-     * @return {boolean}   Is bold enabled, or not?
-     */
-  get bold() {
-    return this.#current.bold;
-  }
+			this.#callback({
+				type: 'style',
+				property: 'italic',
+				value
+			});
+		}
+	}
 
-  /**
-     * Set the italic property
-     *
-     * @param  {boolean}   value   Is italic enabled, or not?
-     */
-  set italic(value) {
-    if (value !== this.#current.italic) {
-      this.#current.italic = value;
+	/**
+	 * Get the italic property
+	 *
+	 * @return {boolean}   Is italic enabled, or not?
+	 */
+	get italic(): boolean {
+		return this.#current.italic;
+	}
 
-      this.#callback({
-        type: 'style',
-        property: 'italic',
-        value,
-      });
-    }
-  }
+	/**
+	 * Set the underline property
+	 *
+	 * @param  {boolean}   value   Is underline enabled, or not?
+	 */
+	set underline(value: boolean) {
+		if (value !== this.#current.underline) {
+			this.#current.underline = value;
 
-  /**
-     * Get the italic property
-     *
-     * @return {boolean}   Is italic enabled, or not?
-     */
-  get italic() {
-    return this.#current.italic;
-  }
+			this.#callback({
+				type: 'style',
+				property: 'underline',
+				value
+			});
+		}
+	}
 
-  /**
-     * Set the underline property
-     *
-     * @param  {boolean}   value   Is underline enabled, or not?
-     */
-  set underline(value) {
-    if (value !== this.#current.underline) {
-      this.#current.underline = value;
+	/**
+	 * Get the underline property
+	 *
+	 * @return {boolean}   Is underline enabled, or not?
+	 */
+	get underline(): boolean {
+		return this.#current.underline;
+	}
 
-      this.#callback({
-        type: 'style',
-        property: 'underline',
-        value,
-      });
-    }
-  }
+	/**
+	 * Set the invert property
+	 *
+	 * @param  {boolean}   value   Is invert enabled, or not?
+	 */
+	set invert(value: boolean) {
+		if (value !== this.#current.invert) {
+			this.#current.invert = value;
 
-  /**
-     * Get the underline property
-     *
-     * @return {boolean}   Is underline enabled, or not?
-     */
-  get underline() {
-    return this.#current.underline;
-  }
+			this.#callback({
+				type: 'style',
+				property: 'invert',
+				value
+			});
+		}
+	}
 
-  /**
-     * Set the invert property
-     *
-     * @param  {boolean}   value   Is invert enabled, or not?
-     */
-  set invert(value) {
-    if (value !== this.#current.invert) {
-      this.#current.invert = value;
+	/**
+	 * Get the invert property
+	 *
+	 * @return {boolean}   Is invert enabled, or not?
+	 */
+	get invert(): boolean {
+		return this.#current.invert;
+	}
 
-      this.#callback({
-        type: 'style',
-        property: 'invert',
-        value,
-      });
-    }
-  }
+	/**
+	 * Set the width property
+	 *
+	 * @param  {number}   value   The width of a character
+	 */
+	set width(value: number) {
+		if (value !== this.#current.width) {
+			this.#current.width = value;
 
-  /**
-     * Get the invert property
-     *
-     * @return {boolean}   Is invert enabled, or not?
-     */
-  get invert() {
-    return this.#current.invert;
-  }
+			this.#callback({
+				type: 'style',
+				property: 'size',
+				value: { width: this.#current.width, height: this.#current.height }
+			});
+		}
+	}
 
-  /**
-    * Set the width property
-    *
-    * @param  {number}   value   The width of a character
-    */
-  set width(value) {
-    if (value !== this.#current.width) {
-      this.#current.width = value;
+	/**
+	 * Get the width property
+	 *
+	 * @return {number}   The width of a character
+	 */
+	get width(): number {
+		return this.#current.width;
+	}
 
-      this.#callback({
-        type: 'style',
-        property: 'size',
-        value: {width: this.#current.width, height: this.#current.height},
-      });
-    }
-  }
+	/**
+	 * Set the height property
+	 *
+	 * @param  {number}   value   The height of a character
+	 */
+	set height(value: number) {
+		if (value !== this.#current.height) {
+			this.#current.height = value;
 
-  /**
-   * Get the width property
-   *
-   * @return {number}   The width of a character
-   */
-  get width() {
-    return this.#current.width;
-  }
+			this.#callback({
+				type: 'style',
+				property: 'size',
+				value: { width: this.#current.width, height: this.#current.height }
+			});
+		}
+	}
 
-  /**
-    * Set the height property
-    *
-    * @param  {number}   value   The height of a character
-    */
-  set height(value) {
-    if (value !== this.#current.height) {
-      this.#current.height = value;
-
-      this.#callback({
-        type: 'style',
-        property: 'size',
-        value: {width: this.#current.width, height: this.#current.height},
-      });
-    }
-  }
-
-  /**
-   * Get the height property
-   *
-   * @return {number}   The height of a character
-   */
-  get height() {
-    return this.#current.height;
-  }
+	/**
+	 * Get the height property
+	 *
+	 * @return {number}   The height of a character
+	 */
+	get height(): number {
+		return this.#current.height;
+	}
 }
 
 export default TextStyle;
