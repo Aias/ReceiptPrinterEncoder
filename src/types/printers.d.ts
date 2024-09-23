@@ -30,9 +30,11 @@ declare module '@printers' {
 		width: number;
 	}
 
+	export type ImageMode = 'column' | 'raster';
+
 	export interface Features {
 		images?: {
-			mode: string;
+			mode: ImageMode;
 		};
 		cutter?: {
 			feed: number;
@@ -54,6 +56,37 @@ declare module '@printers' {
 		media: Media;
 		capabilities: Capabilities;
 		features?: Features;
+	}
+
+	export interface Pdf417Options {
+		columns: number;
+		rows: number;
+		width: number;
+		height: number;
+		errorlevel: number;
+		truncated: boolean;
+	}
+
+	export interface QrCodeOptions {
+		model: number;
+		size: number;
+		errorlevel: string;
+	}
+
+	export interface BarcodeOptions {
+		width: number;
+		height: number;
+		text: boolean;
+	}
+
+	export interface BoxOptions {
+		style: 'single' | 'double' | 'none';
+		align?: Alignment;
+		width: number;
+		marginLeft: number;
+		marginRight: number;
+		paddingLeft: number;
+		paddingRight: number;
 	}
 
 	const printerDefinitions: {

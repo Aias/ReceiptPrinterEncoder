@@ -1,5 +1,5 @@
 import CodepageEncoder from '@point-of-sale/codepage-encoder';
-import { Alignment } from '../line-composer';
+import { Alignment, BarcodeOptions, ImageMode, Pdf417Options, QrCodeOptions } from '@printers';
 
 class LanguageEscPos {
 	/**
@@ -60,7 +60,7 @@ class LanguageEscPos {
 	 * @param {object} options      Configuration object
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
-	barcode(value: string, symbology: string, options: { width: number; height: number; text: boolean }): number[] {
+	barcode(value: string, symbology: string, options: BarcodeOptions): number[] {
 		let result: number[] = [];
 
 		const symbologies: Record<string, number> = {
@@ -146,7 +146,7 @@ class LanguageEscPos {
 	 * @param {object} options      Configuration object
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
-	qrcode(value: string, options: { model: number; size: number; errorlevel: string }): number[] {
+	qrcode(value: string, options: QrCodeOptions): number[] {
 		let result = [];
 
 		/* Model */
@@ -209,17 +209,7 @@ class LanguageEscPos {
 	 * @param {object} options      Configuration object
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
-	pdf417(
-		value: string,
-		options: {
-			columns: number;
-			rows: number;
-			width: number;
-			height: number;
-			errorlevel: number;
-			truncated: boolean;
-		}
-	): number[] {
+	pdf417(value: string, options: Pdf417Options): number[] {
 		let result = [];
 
 		/* Columns */
@@ -308,7 +298,7 @@ class LanguageEscPos {
 	 * @param {string} mode         Image encoding mode ('column' or 'raster')
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
-	image(image: ImageData, width: number, height: number, mode: 'column' | 'raster'): number[] {
+	image(image: ImageData, width: number, height: number, mode: ImageMode): number[] {
 		let result = [];
 
 		const getPixel = (x: number, y: number) =>

@@ -14,10 +14,21 @@ import LineComposer, { type BufferItem } from './line-composer';
 
 import codepageMappings from '../generated/mapping';
 import printerDefinitionsMap from '../generated/printers';
-import type { PrinterDefinition, Font, FontType, Alignment, StyleProperty, Size } from '@printers';
+import type {
+	PrinterDefinition,
+	Font,
+	FontType,
+	Alignment,
+	StyleProperty,
+	Size,
+	Pdf417Options,
+	BoxOptions,
+	BarcodeOptions,
+	QrCodeOptions
+} from '@printers';
 import type { ReceiptPrinterEncoderOptions, FullReceiptPrinterEncoderOptions } from './types/receipt-printer-encoder';
 
-const printerDefinitions: Record<string, PrinterDefinition> = printerDefinitionsMap;
+const printerDefinitions = printerDefinitionsMap as Record<string, PrinterDefinition>;
 
 const defaultConfiguration: FullReceiptPrinterEncoderOptions = {
 	columns: 42,
@@ -199,7 +210,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}          Return the object, for easy chaining commands
 	 *
 	 */
-	initialize() {
+	initialize(): ReceiptPrinterEncoder {
 		if (this.#options.embedded) {
 			throw new Error('Initialize is not supported in table cells or boxes');
 		}
@@ -216,7 +227,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}             Return the object, for easy chaining commands
 	 *
 	 */
-	codepage(codepage: string): object {
+	codepage(codepage: string): ReceiptPrinterEncoder {
 		if (codepage === 'auto') {
 			this.#codepage = codepage;
 			return this;
@@ -242,7 +253,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}          Return the object, for easy chaining commands
 	 *
 	 */
-	text(value: string): object {
+	text(value: string): ReceiptPrinterEncoder {
 		this.#composer.text(value, this.#codepage);
 
 		return this;
@@ -255,7 +266,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                 Return the object, for easy chaining commands
 	 *
 	 */
-	newline(value: number | string = 1): object {
+	newline(value: number | string = 1): ReceiptPrinterEncoder {
 		if (typeof value === 'string') {
 			value = parseInt(value, 10) || 1;
 		}
@@ -274,7 +285,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}          Return the object, for easy chaining commands
 	 *
 	 */
-	line(value: string): object {
+	line(value: string): ReceiptPrinterEncoder {
 		this.text(value);
 		this.newline();
 
@@ -288,7 +299,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	underline(value?: boolean): object {
+	underline(value?: boolean): ReceiptPrinterEncoder {
 		if (typeof value === 'undefined') {
 			this.#composer.style.underline = !this.#composer.style.underline;
 		} else {
@@ -305,7 +316,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	italic(value?: boolean): object {
+	italic(value?: boolean): ReceiptPrinterEncoder {
 		if (typeof value === 'undefined') {
 			this.#composer.style.italic = !this.#composer.style.italic;
 		} else {
@@ -322,7 +333,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	bold(value?: boolean): object {
+	bold(value?: boolean): ReceiptPrinterEncoder {
 		if (typeof value === 'undefined') {
 			this.#composer.style.bold = !this.#composer.style.bold;
 		} else {
@@ -339,7 +350,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	invert(value?: boolean): object {
+	invert(value?: boolean): ReceiptPrinterEncoder {
 		if (typeof value === 'undefined') {
 			this.#composer.style.invert = !this.#composer.style.invert;
 		} else {
@@ -356,7 +367,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                   Return the object, for easy chaining commands
 	 *
 	 */
-	width(width?: number): object {
+	width(width?: number): ReceiptPrinterEncoder {
 		if (typeof width === 'undefined') {
 			width = 1;
 		}
@@ -381,7 +392,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	height(height?: number): object {
+	height(height?: number): ReceiptPrinterEncoder {
 		if (typeof height === 'undefined') {
 			height = 1;
 		}
@@ -407,7 +418,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	size(width?: number | string, height?: number): object {
+	size(width?: number | string, height?: number): ReceiptPrinterEncoder {
 		/* Backwards compatiblity for changing the font */
 		if (typeof width === 'string') {
 			return this.font(width === 'small' ? 'B' : 'A');
@@ -430,7 +441,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	font(value: string): object {
+	font(value: string): ReceiptPrinterEncoder {
 		if (this.#options.embedded) {
 			throw new Error('Changing fonts is not supported in table cells or boxes');
 		}
@@ -482,8 +493,8 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	align(value: Alignment): object {
-		const alignments = ['left', 'center', 'right'];
+	align(value: Alignment): ReceiptPrinterEncoder {
+		const alignments: Alignment[] = ['left', 'center', 'right'];
 
 		if (!alignments.includes(value)) {
 			throw new Error('Unknown alignment');
@@ -514,7 +525,7 @@ class ReceiptPrinterEncoder {
 			marginRight?: number;
 		}[],
 		data: (string | ((encoder: ReceiptPrinterEncoder) => void))[][]
-	): object {
+	): ReceiptPrinterEncoder {
 		this.#composer.flush();
 
 		/* Process all lines */
@@ -609,7 +620,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                   Return the object, for easy chaining commands
 	 *
 	 */
-	rule(options?: { style: string; width: number }): object {
+	rule(options?: { style: string; width: number }): ReceiptPrinterEncoder {
 		options = Object.assign(
 			{
 				style: 'single',
@@ -642,7 +653,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                     Return the object, for easy chaining commands
 	 *
 	 */
-	box(options, contents) {
+	box(options: BoxOptions, contents: string | ((encoder: ReceiptPrinterEncoder) => void)): ReceiptPrinterEncoder {
 		options = Object.assign(
 			{
 				style: 'single',
@@ -659,7 +670,7 @@ class ReceiptPrinterEncoder {
 			throw new Error('Box is too wide');
 		}
 
-		let elements;
+		let elements: string[] = [];
 
 		if (options.style == 'single') {
 			elements = ['┌', '┐', '└', '┘', '─', '│'];
@@ -677,7 +688,7 @@ class ReceiptPrinterEncoder {
 		);
 
 		columnEncoder.codepage(this.#codepage);
-		columnEncoder.align(options.align);
+		columnEncoder.align(options.align || 'left');
 
 		if (typeof contents === 'function') {
 			contents(columnEncoder);
@@ -753,7 +764,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	barcode(value, symbology, height) {
+	barcode(value: string, symbology: string, height: number | BarcodeOptions): ReceiptPrinterEncoder {
 		let options = {
 			height: 60,
 			width: 2,
@@ -804,7 +815,7 @@ class ReceiptPrinterEncoder {
 	 * @param  {string}           errorlevel  Backwards compatible the amount of error correction used, either 'l', 'm', 'q', 'h'
 	 * @return {object}                  Return the object, for easy chaining commands
 	 */
-	qrcode(value, model, size, errorlevel) {
+	qrcode(value: string, model: number | QrCodeOptions, size: number, errorlevel: string): ReceiptPrinterEncoder {
 		let options = {
 			model: 2,
 			size: 6,
@@ -864,7 +875,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                     Return the object, for easy chaining commands
 	 *
 	 */
-	pdf417(value, options) {
+	pdf417(value: string, options: Pdf417Options): ReceiptPrinterEncoder {
 		options = Object.assign(
 			{
 				width: 3,
@@ -917,7 +928,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	image(input, width, height, algorithm, threshold) {
+	image(input: any, width: number, height: number, algorithm: string, threshold: number): ReceiptPrinterEncoder {
 		if (this.#options.embedded) {
 			throw new Error('Images are not supported in table cells or boxes');
 		}
@@ -965,8 +976,12 @@ class ReceiptPrinterEncoder {
 			canvas.width = width;
 			canvas.height = height;
 			const context = canvas.getContext('2d');
-			context.drawImage(input, 0, 0, width, height);
-			image = context.getImageData(0, 0, width, height);
+			if (context) {
+				context.drawImage(input, 0, 0, width, height);
+				image = context.getImageData(0, 0, width, height);
+			} else {
+				throw new Error('Failed to get 2D rendering context');
+			}
 		}
 
 		if (type == 'node-canvas') {
@@ -1076,7 +1091,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	cut(value?: 'full' | 'partial'): object {
+	cut(value?: 'full' | 'partial'): ReceiptPrinterEncoder {
 		if (this.#options.embedded) {
 			throw new Error('Cut is not supported in table cells or boxes');
 		}
@@ -1103,7 +1118,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	pulse(device, on, off) {
+	pulse(device: number, on: number, off: number): ReceiptPrinterEncoder {
 		if (this.#options.embedded) {
 			throw new Error('Pulse is not supported in table cells or boxes');
 		}
@@ -1124,7 +1139,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}          Return the object, for easy chaining commands
 	 *
 	 */
-	raw(data: number[]): object {
+	raw(data: number[]): ReceiptPrinterEncoder {
 		this.#composer.raw(data);
 
 		return this;

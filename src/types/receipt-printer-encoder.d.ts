@@ -104,7 +104,7 @@ export interface FullReceiptPrinterEncoderOptions {
 	/**
 	 * Mode for handling images.
 	 */
-	imageMode: string;
+	imageMode: 'column' | 'raster';
 
 	/**
 	 * Number of feed lines before cutting the paper.
