@@ -340,7 +340,7 @@ class LanguageStarPrnt {
 	 * @param {number} off      Pulse OFF time
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	pulse(device: number, on: number, off: number): number[] {
+	pulse(device?: number, on?: number, off?: number): number[] {
 		if (typeof device === 'undefined') {
 			device = 0;
 		}

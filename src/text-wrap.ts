@@ -15,7 +15,7 @@ class TextWrap {
 	 * @param  {object}   options   Object containing configuration options
 	 * @return {array}              Array of lines
 	 */
-	static wrap(value: string, options: TextWrapOptions) {
+	static wrap(value: string, options: TextWrapOptions): string[] {
 		const chunkedLines: string[][] = [];
 		let line: string[] = [];
 		let length = options.indent || 0;

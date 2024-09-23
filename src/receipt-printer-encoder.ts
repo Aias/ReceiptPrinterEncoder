@@ -815,7 +815,7 @@ class ReceiptPrinterEncoder {
 	 * @param  {string}           errorlevel  Backwards compatible the amount of error correction used, either 'l', 'm', 'q', 'h'
 	 * @return {object}                  Return the object, for easy chaining commands
 	 */
-	qrcode(value: string, model: number | QrCodeOptions, size: number, errorlevel: string): ReceiptPrinterEncoder {
+	qrcode(value: string, model?: number | QrCodeOptions, size?: number, errorlevel?: string): ReceiptPrinterEncoder {
 		let options = {
 			model: 2,
 			size: 6,
@@ -928,7 +928,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	image(input: any, width: number, height: number, algorithm: string, threshold: number): ReceiptPrinterEncoder {
+	image(input: any, width: number, height: number, algorithm?: string, threshold?: number): ReceiptPrinterEncoder {
 		if (this.#options.embedded) {
 			throw new Error('Images are not supported in table cells or boxes');
 		}
@@ -1118,7 +1118,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	pulse(device: number, on: number, off: number): ReceiptPrinterEncoder {
+	pulse(device?: number, on?: number, off?: number): ReceiptPrinterEncoder {
 		if (this.#options.embedded) {
 			throw new Error('Pulse is not supported in table cells or boxes');
 		}

@@ -60,6 +60,11 @@ export interface ReceiptPrinterEncoderOptions {
 	debug?: boolean;
 
 	/**
+	 * Automatically flushes the print buffer based on internal logic. Defaults to `true` for StarPRNT printers.
+	 */
+	autoFlush?: boolean;
+
+	/**
 	 * Indicates whether the encoder is embedded within another structure (e.g., a table cell or box).
 	 */
 	embedded?: boolean;
@@ -142,7 +147,7 @@ export interface FullReceiptPrinterEncoderOptions {
 	createCanvas?: ((width: number, height: number) => any) | null;
 
 	/**
-	 * Automatically flushes the print buffer based on internal logic.
+	 * Automatically flushes the print buffer based on internal logic. Defaults to `true` for StarPRNT printers.
 	 */
 	autoFlush?: boolean;
 }
