@@ -764,7 +764,7 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	barcode(value: string, symbology: string, height: number | BarcodeOptions): ReceiptPrinterEncoder {
+	barcode(value: string, symbology: string, height?: number | BarcodeOptions): ReceiptPrinterEncoder {
 		let options = {
 			height: 60,
 			width: 2,
