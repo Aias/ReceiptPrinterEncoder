@@ -1,14 +1,11 @@
 import TextStyle from './text-style.js';
 import TextWrap from './text-wrap.js';
-
-export type Alignment = 'left' | 'center' | 'right';
-export type StyleProperty = 'bold' | 'italic' | 'underline' | 'invert';
-export type Size = { width: number; height: number };
+import { Alignment, StyleProperty, Size } from '@printers';
 
 export type TextItem = {
 	type: 'text';
 	value: string;
-	codepage: number | null;
+	codepage: string | null;
 };
 export type SpaceItem = {
 	type: 'space';
@@ -54,7 +51,7 @@ interface BufferOptions {
  * Compose lines of text and commands
  */
 class LineComposer {
-	private style: TextStyle;
+	public style: TextStyle;
 
 	#embedded;
 	#columns;
@@ -89,9 +86,9 @@ class LineComposer {
 	 * Add text to the line, potentially wrapping it
 	 *
 	 * @param  {string}   value   Text to add to the line
-	 * @param  {number}   codepage   Codepage to use for the text
+	 * @param  {string}   codepage   Codepage to use for the text
 	 */
-	text(value: string, codepage: number) {
+	text(value: string, codepage: string) {
 		const lines = TextWrap.wrap(value, { columns: this.#columns, width: this.style.width, indent: this.#cursor });
 
 		for (let i = 0; i < lines.length; i++) {
@@ -125,7 +122,7 @@ class LineComposer {
 	 * @param  {array}   value   Array of bytes to add to the line
 	 * @param  {number}  length  Length in characters of the value
 	 */
-	raw(value: number[], length: number) {
+	raw(value: number[], length?: number) {
 		if (value instanceof Array) {
 			value = value.flat();
 		}

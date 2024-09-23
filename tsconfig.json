@@ -7,7 +7,8 @@
 		"rootDir": "./",
 		"baseUrl": "./",
 		"paths": {
-			"@printers": ["./src/types/printers.d.ts"]
+			"@printers": ["./src/types/printers.d.ts"],
+			"@encoder": ["./src/types/receipt-printer-encoder.d.ts"]
 		},
 		"strict": true,
 		"esModuleInterop": true,

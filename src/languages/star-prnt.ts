@@ -1,7 +1,5 @@
 import CodepageEncoder from '@point-of-sale/codepage-encoder';
-import { Alignment } from '../line-composer';
-
-type FontType = 'A' | 'B' | 'C';
+import { Alignment, FontType } from '@printers';
 
 class LanguageStarPrnt {
 	/**

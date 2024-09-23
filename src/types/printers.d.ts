@@ -1,10 +1,16 @@
 declare module '@printers' {
+	type StringWithAutocomplete<T> = T | (string & Record<never, never>);
+	export type Alignment = 'left' | 'center' | 'right';
+	export type StyleProperty = 'bold' | 'italic' | 'underline' | 'invert';
+	export type Size = { width: number; height: number };
+	export type FontType = StringWithAutocomplete<'A' | 'B' | 'C' | 'D' | 'E'>; //https://x.com/diegohaz/status/1524257274012876801
+
 	export interface Font {
-		size: string;
+		size: FontType;
 		columns: number;
 	}
 
-	export type Language = 'esc-pos' | 'star-prnt';
+	export type Language = 'esc-pos' | 'star-prnt' | 'star-line';
 
 	export interface Capabilities {
 		language: string;
