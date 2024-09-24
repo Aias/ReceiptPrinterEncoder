@@ -1,6 +1,6 @@
 import TextStyle from './text-style.js';
 import TextWrap from './text-wrap.js';
-import { Alignment, StyleProperty, Size } from '@printers';
+import { TextAlign, StyleProperty, Size } from '@printers';
 
 export type TextItem = {
 	type: 'text';
@@ -17,7 +17,7 @@ export type RawItem = {
 };
 export type AlignItem = {
 	type: 'align';
-	value: Alignment;
+	value: TextAlign;
 };
 export type StyleItem =
 	| {
@@ -35,11 +35,12 @@ export type EmptyItem = {
 };
 
 export type BufferItem = TextItem | SpaceItem | RawItem | AlignItem | StyleItem | EmptyItem;
+export type LineCommands = { commands: BufferItem[]; height: number };
 
 export interface LineComposerOptions {
 	embedded?: boolean;
 	columns?: number;
-	align?: Alignment;
+	align?: TextAlign;
 	callback?: (value: any) => void;
 }
 
@@ -136,13 +137,13 @@ class LineComposer {
 	 * @param  {object}   value   Item to add to the line buffer
 	 * @param  {number}   length  Length in characters of the value
 	 */
-	add(value: BufferItem, length: number) {
+	add(value: BufferItem | BufferItem[], length: number) {
 		if (length + this.#cursor > this.#columns) {
 			this.flush();
 		}
 
 		this.#cursor += length;
-		this.#buffer = this.#buffer.concat(value);
+		this.#buffer = this.#buffer.concat(Array.isArray(value) ? value : [value]);
 	}
 
 	/**
@@ -255,7 +256,7 @@ class LineComposer {
 			options || {}
 		);
 
-		const align: { current: Alignment; next: Alignment | null } = {
+		const align: { current: TextAlign; next: TextAlign | null } = {
 			current: this.#align,
 			next: null
 		};
@@ -348,7 +349,7 @@ class LineComposer {
 	 *
 	 * @param  {string}   value   Text alignment, can be 'left', 'center', or 'right'
 	 */
-	set align(value: Alignment) {
+	set align(value: TextAlign) {
 		this.add({ type: 'align', value }, 0);
 	}
 
@@ -357,7 +358,7 @@ class LineComposer {
 	 *
 	 * @return {string}   Text alignment, can be 'left', 'center', or 'right'
 	 */
-	get align(): Alignment {
+	get align(): TextAlign {
 		let align = this.#align;
 
 		for (let i = 0; i < this.#buffer.length; i++) {

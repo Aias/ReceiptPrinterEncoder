@@ -8,18 +8,19 @@ import resizeImageData from 'resize-image-data';
 
 import LanguageEscPos from './languages/esc-pos';
 import LanguageStarPrnt from './languages/star-prnt';
-import LineComposer, { type BufferItem } from './line-composer';
+import LineComposer, { LineCommands, type BufferItem } from './line-composer';
 import type {
 	PrinterDefinition,
 	FontDefinition,
 	FontType,
-	Alignment,
+	TextAlign,
 	StyleProperty,
 	Size,
 	Pdf417Options,
 	BoxOptions,
 	BarcodeOptions,
-	QrCodeOptions
+	QrCodeOptions,
+	VerticalAlign
 } from '@printers';
 import type {
 	ReceiptPrinterEncoderOptions,
@@ -56,7 +57,7 @@ const defaultConfiguration: FullReceiptPrinterEncoderOptions = {
  */
 class ReceiptPrinterEncoder {
 	#options: FullReceiptPrinterEncoderOptions = defaultConfiguration;
-	#queue: BufferItem[] = [];
+	#queue: BufferItem[][] = [];
 
 	#language: LanguageEscPos | LanguageStarPrnt;
 	#composer: LineComposer;
@@ -504,8 +505,8 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	align(value: Alignment): ReceiptPrinterEncoder {
-		const alignments: Alignment[] = ['left', 'center', 'right'];
+	align(value: TextAlign): ReceiptPrinterEncoder {
+		const alignments: TextAlign[] = ['left', 'center', 'right'];
 
 		if (!alignments.includes(value)) {
 			throw new Error('Unknown alignment');
@@ -530,8 +531,8 @@ class ReceiptPrinterEncoder {
 	table(
 		columns: {
 			width: number;
-			align: Alignment;
-			verticalAlign?: 'top' | 'bottom';
+			align: TextAlign;
+			verticalAlign?: VerticalAlign;
 			marginLeft?: number;
 			marginRight?: number;
 		}[],
@@ -587,10 +588,10 @@ class ReceiptPrinterEncoder {
 				for (let p = lines[c].length; p < maxLines; p++) {
 					let verticalAlign = 'top';
 					if (typeof columns[c].verticalAlign !== 'undefined') {
-						verticalAlign = columns[c].verticalAlign;
+						verticalAlign = columns[c].verticalAlign as VerticalAlign;
 					}
 
-					const line = { commands: [{ type: 'space', size: columns[c].width }], height: 1 };
+					const line: LineCommands = { commands: [{ type: 'space', size: columns[c].width }], height: 1 };
 
 					if (verticalAlign == 'bottom') {
 						lines[c].unshift(line);
@@ -605,13 +606,13 @@ class ReceiptPrinterEncoder {
 			for (let l = 0; l < maxLines; l++) {
 				for (let c = 0; c < columns.length; c++) {
 					if (typeof columns[c].marginLeft !== 'undefined') {
-						this.#composer.space(columns[c].marginLeft);
+						this.#composer.space(columns[c].marginLeft || 0);
 					}
 
 					this.#composer.add(lines[c][l].commands, columns[c].width);
 
 					if (typeof columns[c].marginRight !== 'undefined') {
-						this.#composer.space(columns[c].marginRight);
+						this.#composer.space(columns[c].marginRight || 0);
 					}
 				}
 
@@ -1222,7 +1223,7 @@ class ReceiptPrinterEncoder {
 	 * @return {array}         All the commands currently in the queue
 	 */
 	commands(): { commands: BufferItem[]; height: number }[] {
-		const result = [];
+		const result: { commands: BufferItem[]; height: number }[] = [];
 
 		const remaining = this.#composer.fetch({ forceNewline: true });
 
@@ -1233,13 +1234,13 @@ class ReceiptPrinterEncoder {
 		/* Flush the printer line buffer if needed */
 
 		if (this.#options.autoFlush && !this.#options.embedded) {
-			this.#queue.push(this.#language.flush());
+			this.#queue.push([{ type: 'raw', value: this.#language.flush() }]);
 		}
 
 		/* Process all lines in the queue */
 
 		while (this.#queue.length) {
-			const line = this.#queue.shift();
+			const line = this.#queue.shift() as BufferItem[];
 			const height = line
 				.filter((i) => i.type === 'style' && i.property === 'size')
 				.map((i) => i.value.height)

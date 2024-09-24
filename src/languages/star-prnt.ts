@@ -1,5 +1,5 @@
 import CodepageEncoder from '@point-of-sale/codepage-encoder';
-import { Alignment, BarcodeOptions, FontType, ImageMode, Pdf417Options, QrCodeOptions } from '@printers';
+import { TextAlign, BarcodeOptions, FontType, ImageMode, Pdf417Options, QrCodeOptions } from '@printers';
 
 class LanguageStarPrnt {
 	/**
@@ -41,7 +41,7 @@ class LanguageStarPrnt {
 	 * @param {string} value    Alignment value ('left', 'center', 'right')
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	align(value: Alignment): number[] {
+	align(value: TextAlign): number[] {
 		let align = 0x00;
 
 		if (value === 'center') {

@@ -1,5 +1,5 @@
 import CodepageEncoder from '@point-of-sale/codepage-encoder';
-import { Alignment, BarcodeOptions, ImageMode, Pdf417Options, QrCodeOptions } from '@printers';
+import { TextAlign, BarcodeOptions, ImageMode, Pdf417Options, QrCodeOptions } from '@printers';
 
 class LanguageEscPos {
 	/**
@@ -35,7 +35,7 @@ class LanguageEscPos {
 	 * @param {string} value    Alignment value ('left', 'center', 'right')
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	align(value?: Alignment): number[] {
+	align(value?: TextAlign): number[] {
 		let align: number;
 
 		switch (value) {

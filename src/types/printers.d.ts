@@ -2,7 +2,8 @@ import { PrinterLanguage, CodepageMappingIdentifier } from '@encoder';
 
 declare module '@printers' {
 	type StringWithAutocomplete<T> = T | (string & Record<never, never>);
-	export type Alignment = 'left' | 'center' | 'right';
+	export type TextAlign = 'left' | 'center' | 'right';
+	export type VerticalAlign = 'top' | 'bottom';
 	export type StyleProperty = 'bold' | 'italic' | 'underline' | 'invert';
 	export type Size = { width: number; height: number };
 	export type FontType = StringWithAutocomplete<'A' | 'B' | 'C' | 'D' | 'E'>; //https://x.com/diegohaz/status/1524257274012876801
@@ -81,7 +82,7 @@ declare module '@printers' {
 
 	export interface BoxOptions {
 		style: 'single' | 'double' | 'none';
-		align?: Alignment;
+		align?: TextAlign;
 		width: number;
 		marginLeft: number;
 		marginRight: number;
