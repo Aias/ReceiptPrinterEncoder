@@ -5,6 +5,7 @@ describe('ReceiptPrinterEncoder', function () {
 	describe('ReceiptPrinterEncoder({ language: unknown })', function () {
 		it('should throw an "Language not supported" error', function () {
 			expect(function () {
+				// @ts-expect-error - Testing type safety of the language parameter.
 				new ReceiptPrinterEncoder({ language: 'unknown' });
 			}).to.throw('The specified language is not supported');
 		});

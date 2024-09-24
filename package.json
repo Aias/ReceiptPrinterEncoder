@@ -45,6 +45,7 @@
 		"@rollup/plugin-node-resolve": "^15.3.0",
 		"@rollup/plugin-terser": "^0.4.4",
 		"@rollup/plugin-typescript": "^12.1.0",
+		"@types/chai": "^5.0.0",
 		"@types/mocha": "^10.0.8",
 		"@types/node": "^22.6.1",
 		"canvas": "^2.11.2",
