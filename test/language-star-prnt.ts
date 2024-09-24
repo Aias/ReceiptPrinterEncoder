@@ -1,4 +1,4 @@
-import ReceiptPrinterEncoder from '../src/receipt-printer-encoder.js';
+import ReceiptPrinterEncoder from '../src/receipt-printer-encoder';
 import { createCanvas } from 'canvas';
 import { assert, expect } from 'chai';
 
