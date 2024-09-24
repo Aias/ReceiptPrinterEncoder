@@ -9,14 +9,9 @@ import resizeImageData from 'resize-image-data';
 import LanguageEscPos from './languages/esc-pos';
 import LanguageStarPrnt from './languages/star-prnt';
 import LineComposer, { type BufferItem } from './line-composer';
-
-/* Import generated data */
-
-import codepageMappings from '../generated/mapping';
-import printerDefinitionsMap from '../generated/printers';
 import type {
 	PrinterDefinition,
-	Font,
+	FontDefinition,
 	FontType,
 	Alignment,
 	StyleProperty,
@@ -26,9 +21,22 @@ import type {
 	BarcodeOptions,
 	QrCodeOptions
 } from '@printers';
-import type { ReceiptPrinterEncoderOptions, FullReceiptPrinterEncoderOptions } from './types/receipt-printer-encoder';
+import type {
+	ReceiptPrinterEncoderOptions,
+	FullReceiptPrinterEncoderOptions,
+	CodepageName,
+	CodepageValue,
+	CodepageDefinitions,
+	CodepageMapping
+} from './types/receipt-printer-encoder';
+
+/* Import generated data */
+
+import codepageMappingData from '../generated/mapping';
+import printerDefinitionsMap from '../generated/printers';
 
 const printerDefinitions = printerDefinitionsMap as Record<string, PrinterDefinition>;
+const codepageMappings = codepageMappingData as CodepageDefinitions;
 
 const defaultConfiguration: FullReceiptPrinterEncoderOptions = {
 	columns: 42,
@@ -37,7 +45,7 @@ const defaultConfiguration: FullReceiptPrinterEncoderOptions = {
 	feedBeforeCut: 0,
 	newline: '\n\r',
 	codepageMapping: 'epson',
-	codepageCandidates: null,
+	// codepageCandidates: null,
 	debug: false,
 	embedded: false,
 	createCanvas: null
@@ -50,19 +58,22 @@ class ReceiptPrinterEncoder {
 	#options: FullReceiptPrinterEncoderOptions = defaultConfiguration;
 	#queue: BufferItem[] = [];
 
-	#language;
-	#composer;
+	#language: LanguageEscPos | LanguageStarPrnt;
+	#composer: LineComposer;
 
-	#fontMapping: Record<string, Font> = {
+	#fontMapping: Record<string, FontDefinition> = {
 		A: { size: '12x24', columns: 42 },
 		B: { size: '9x24', columns: 56 }
 	};
 
-	#codepageMapping = {};
-	#codepageCandidates = [];
-	#codepage = 'cp437';
+	#codepageMapping: CodepageMapping;
+	#codepageCandidates: CodepageName[];
+	#codepage: CodepageName = 'cp437';
 
-	#state = {
+	#state: {
+		codepage: CodepageValue;
+		font: FontType;
+	} = {
 		codepage: 0,
 		font: 'A'
 	};

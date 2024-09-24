@@ -1,3 +1,5 @@
+import { PrinterLanguage, CodepageMappingIdentifier } from '@encoder';
+
 declare module '@printers' {
 	type StringWithAutocomplete<T> = T | (string & Record<never, never>);
 	export type Alignment = 'left' | 'center' | 'right';
@@ -5,23 +7,21 @@ declare module '@printers' {
 	export type Size = { width: number; height: number };
 	export type FontType = StringWithAutocomplete<'A' | 'B' | 'C' | 'D' | 'E'>; //https://x.com/diegohaz/status/1524257274012876801
 
-	export interface Font {
+	export interface FontDefinition {
 		size: FontType;
 		columns: number;
 	}
 
-	export type Language = 'esc-pos' | 'star-prnt' | 'star-line';
-
 	export interface Capabilities {
-		language: string;
-		codepages: string;
+		language: PrinterLanguage;
+		codepages: CodepageMappingIdentifier;
 		newline?: string;
 		fonts: {
-			A: Font;
-			B?: Font;
-			C?: Font;
-			D?: Font;
-			E?: Font;
+			A: FontDefinition;
+			B?: FontDefinition;
+			C?: FontDefinition;
+			D?: FontDefinition;
+			E?: FontDefinition;
 		};
 	}
 

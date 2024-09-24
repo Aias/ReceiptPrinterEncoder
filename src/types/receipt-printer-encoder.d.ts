@@ -1,4 +1,17 @@
-import type { PrinterDefinition, Font, Language } from '@printers';
+import type { PrinterDefinition, FontDefinition, Language } from '@printers';
+import codepageMappings from '../../generated/mapping';
+
+export type PrinterLanguage = keyof typeof codepageMappings;
+export type CodepageName = string;
+export type CodepageValue = number;
+export type CodepageMappingIdentifier = Exclude<
+	{
+		[K in keyof typeof codepageMappings]: keyof (typeof codepageMappings)[K];
+	}[keyof typeof codepageMappings],
+	undefined
+>;
+export type CodepageMapping = Record<CodepageName, CodepageValue>;
+export type CodepageDefinitions = Record<PrinterLanguage, Record<CodepageMappingIdentifier, (CodepageName | null)[]>>;
 
 /**
  * Optional parameters that can be supplied to the ReceiptPrinterEncoder constructor.
@@ -12,12 +25,22 @@ export interface ReceiptPrinterEncoderOptions {
 	/**
 	 * Language protocol for the printer. Supported values are 'esc-pos', 'star-prnt', and 'star-line'.
 	 */
-	language?: string;
+	language?: PrinterLanguage;
 
 	/**
 	 * Model identifier of the printer, corresponding to keys in `printerDefinitions`.
 	 */
 	printerModel?: keyof typeof import('../generated/printers').default;
+
+	/**
+	 * Codepage mapping identifier or custom mapping object.
+	 */
+	codepageMapping?: CodepageMappingIdentifier | CodepageMapping;
+
+	/**
+	 * Array of codepage identifiers to attempt during auto-encoding. Can be null.
+	 */
+	codepageCandidates?: CodepageName[] | null;
 
 	/**
 	 * Width of the receipt paper. If provided, it overrides the `columns` option.
@@ -45,16 +68,6 @@ export interface ReceiptPrinterEncoderOptions {
 	newline?: string;
 
 	/**
-	 * Codepage mapping identifier. Determines how characters are encoded.
-	 */
-	codepageMapping?: string;
-
-	/**
-	 * Array of codepage identifiers to attempt during auto-encoding. Can be null.
-	 */
-	codepageCandidates?: string[] | null;
-
-	/**
 	 * Enables or disables debug mode. Defaults to `false`.
 	 */
 	debug?: boolean;
@@ -75,8 +88,6 @@ export interface ReceiptPrinterEncoderOptions {
 	createCanvas?: ((width: number, height: number) => any) | null;
 }
 
-import type { PrinterDefinition, Font, Language } from '@printers';
-
 /**
  * Complete set of options used internally by ReceiptPrinterEncoder after merging user inputs with defaults.
  */
@@ -89,12 +100,22 @@ export interface FullReceiptPrinterEncoderOptions {
 	/**
 	 * Language protocol for the printer.
 	 */
-	language: string;
+	language: PrinterLanguage;
 
 	/**
 	 * Model identifier of the printer, corresponding to keys in `printerDefinitions`.
 	 */
 	printerModel?: keyof typeof import('../generated/printers').default;
+
+	/**
+	 * Codepage mapping identifier or custom mapping object.
+	 */
+	codepageMapping: CodepageMappingIdentifier | CodepageMapping;
+
+	/**
+	 * Array of codepage identifiers to attempt during auto-encoding. Can be null.
+	 */
+	codepageCandidates?: CodepageName[] | null;
 
 	/**
 	 * Width of the receipt paper.
@@ -120,16 +141,6 @@ export interface FullReceiptPrinterEncoderOptions {
 	 * Newline character(s) to use.
 	 */
 	newline: string;
-
-	/**
-	 * Codepage mapping identifier.
-	 */
-	codepageMapping: string;
-
-	/**
-	 * Array of codepage identifiers to attempt during auto-encoding.
-	 */
-	codepageCandidates: string[] | null;
 
 	/**
 	 * Enables or disables debug mode.
