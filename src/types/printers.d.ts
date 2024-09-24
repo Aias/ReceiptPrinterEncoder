@@ -68,10 +68,13 @@ declare module '@printers' {
 		truncated: boolean;
 	}
 
+	export type QrCodeModel = 1 | 2;
+	export type QrCodeSize = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+	export type QrCodeErrorLevel = 'l' | 'm' | 'q' | 'h';
 	export interface QrCodeOptions {
-		model: number;
-		size: number;
-		errorlevel: string;
+		model: QrCodeModel;
+		size: QrCodeSize;
+		errorlevel: QrCodeErrorLevel;
 	}
 
 	export interface BarcodeOptions {

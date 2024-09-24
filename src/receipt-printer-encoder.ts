@@ -20,7 +20,10 @@ import type {
 	BoxOptions,
 	BarcodeOptions,
 	QrCodeOptions,
-	VerticalAlign
+	VerticalAlign,
+	QrCodeErrorLevel,
+	QrCodeSize,
+	QrCodeModel
 } from '@printers';
 import type {
 	ReceiptPrinterEncoderOptions,
@@ -795,7 +798,7 @@ class ReceiptPrinterEncoder {
 			throw new Error('Barcodes are not supported in table cells or boxes');
 		}
 
-		this.#composer.flush();
+		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
 
 		/* Set alignment */
 
@@ -813,7 +816,7 @@ class ReceiptPrinterEncoder {
 			this.#composer.raw(this.#language.align('left'));
 		}
 
-		this.#composer.flush();
+		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
 
 		return this;
 	}
@@ -821,14 +824,21 @@ class ReceiptPrinterEncoder {
 	/**
 	 * QR code
 	 *
-	 * @param  {string}           value  the value of the qr code
-	 * @param  {number|object}    model  Either the configuration object, or backwards compatible model of the qrcode, either 1 or 2
-	 * @param  {number}           size   Backwards compatible size of the qrcode, a value between 1 and 8
-	 * @param  {string}           errorlevel  Backwards compatible the amount of error correction used, either 'l', 'm', 'q', 'h'
-	 * @return {object}                  Return the object, for easy chaining commands
+	 * @param  {string}           value       The value of the qr code
+	 * @param  {number|object}    model       Either the configuration object, or
+	 *                                        backwards compatible model of the qrcode, either 1 or 2
+	 * @param  {number}           size        Backwards compatible size of the qrcode, a value between 1 and 8
+	 * @param  {string}           errorlevel  Backwards compatible the amount of error correction used,
+	 *                                        either 'l', 'm', 'q', 'h'
+	 * @return {object}                       Return the object, for easy chaining commands
 	 */
-	qrcode(value: string, model?: number | QrCodeOptions, size?: number, errorlevel?: string): ReceiptPrinterEncoder {
-		let options = {
+	qrcode(
+		value: string,
+		model?: QrCodeModel | QrCodeOptions,
+		size?: QrCodeSize,
+		errorlevel?: QrCodeErrorLevel
+	): ReceiptPrinterEncoder {
+		let options: QrCodeOptions = {
 			model: 2,
 			size: 6,
 			errorlevel: 'm'
@@ -856,7 +866,7 @@ class ReceiptPrinterEncoder {
 
 		/* Force printing the print buffer and moving to a new line */
 
-		this.#composer.flush();
+		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
 
 		/* Set alignment */
 
@@ -874,7 +884,7 @@ class ReceiptPrinterEncoder {
 			this.#composer.raw(this.#language.align('left'));
 		}
 
-		this.#composer.flush();
+		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
 
 		return this;
 	}
@@ -906,7 +916,7 @@ class ReceiptPrinterEncoder {
 
 		/* Force printing the print buffer and moving to a new line */
 
-		this.#composer.flush();
+		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
 
 		/* Set alignment */
 
@@ -924,7 +934,7 @@ class ReceiptPrinterEncoder {
 			this.#composer.raw(this.#language.align('left'));
 		}
 
-		this.#composer.flush();
+		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
 
 		return this;
 	}
@@ -1073,7 +1083,7 @@ class ReceiptPrinterEncoder {
 				break;
 		}
 
-		this.#composer.flush();
+		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
 
 		/* Set alignment */
 
@@ -1091,7 +1101,7 @@ class ReceiptPrinterEncoder {
 			this.#composer.raw(this.#language.align('left'));
 		}
 
-		this.#composer.flush();
+		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
 
 		return this;
 	}
@@ -1108,15 +1118,15 @@ class ReceiptPrinterEncoder {
 			throw new Error('Cut is not supported in table cells or boxes');
 		}
 
-		this.#composer.flush();
-
 		for (let i = 0; i < this.#options.feedBeforeCut; i++) {
 			this.#composer.flush({ forceNewline: true });
 		}
 
+		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
+
 		this.#composer.raw(this.#language.cut(value));
 
-		this.#composer.flush();
+		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
 
 		return this;
 	}
@@ -1135,11 +1145,11 @@ class ReceiptPrinterEncoder {
 			throw new Error('Pulse is not supported in table cells or boxes');
 		}
 
-		this.#composer.flush();
+		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
 
 		this.#composer.raw(this.#language.pulse(device, on, off));
 
-		this.#composer.flush();
+		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
 
 		return this;
 	}
@@ -1225,7 +1235,7 @@ class ReceiptPrinterEncoder {
 	commands(): { commands: BufferItem[]; height: number }[] {
 		const result: { commands: BufferItem[]; height: number }[] = [];
 
-		const remaining = this.#composer.fetch({ forceNewline: true });
+		const remaining = this.#composer.fetch({ forceFlush: true, ignoreAlignment: true });
 
 		if (remaining.length) {
 			this.#queue.push(remaining);
@@ -1262,6 +1272,10 @@ class ReceiptPrinterEncoder {
 				commands: line,
 				height: height
 			});
+		}
+
+		if (this.#options.debug) {
+			console.log('commands', result);
 		}
 
 		this.#reset();

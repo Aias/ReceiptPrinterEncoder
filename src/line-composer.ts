@@ -7,18 +7,26 @@ export type TextItem = {
 	value: string;
 	codepage: string | null;
 };
+export const isTextItem = (item: BufferItem): item is TextItem => item.type === 'text';
+
 export type SpaceItem = {
 	type: 'space';
 	size: number;
 };
+export const isSpaceItem = (item: BufferItem): item is SpaceItem => item.type === 'space';
+
 export type RawItem = {
 	type: 'raw';
 	value: number[];
 };
+export const isRawItem = (item: BufferItem): item is RawItem => item.type === 'raw';
+
 export type AlignItem = {
 	type: 'align';
 	value: TextAlign;
 };
+export const isAlignItem = (item: BufferItem): item is AlignItem => item.type === 'align';
+
 export type StyleItem =
 	| {
 			type: 'style';
@@ -30,10 +38,12 @@ export type StyleItem =
 			property: 'size';
 			value: Size;
 	  };
+export const isStyleItem = (item: BufferItem): item is StyleItem => item.type === 'style';
+
 export type EmptyItem = {
 	type: 'empty';
 };
-
+export const isEmptyItem = (item: BufferItem): item is EmptyItem => item.type === 'empty';
 export type BufferItem = TextItem | SpaceItem | RawItem | AlignItem | StyleItem | EmptyItem;
 export type LineCommands = { commands: BufferItem[]; height: number };
 
@@ -46,6 +56,8 @@ export interface LineComposerOptions {
 
 interface BufferOptions {
 	forceNewline?: boolean;
+	forceFlush?: boolean;
+	ignoreAlignment?: boolean;
 }
 
 /**
@@ -161,100 +173,13 @@ class LineComposer {
 	 * @return {array}               Array of items in the line buffer
 	 */
 	fetch(options: BufferOptions): BufferItem[] {
-		if (this.#cursor === 0 && !options.forceNewline) {
-			if (!this.#buffer.length) {
-				return [];
-			}
+		/* Unless forced keep style changes for the next line */
 
-			const result = this.#merge([...this.#buffer]);
-			this.#buffer = [];
-			return result;
+		if (this.#cursor === 0 && !options.forceNewline && !options.forceFlush) {
+			return [];
 		}
 
-		let result: BufferItem[] = [];
-
-		const restore = this.style.restore();
-		const store = this.style.store();
-
-		function isTextOrSpaceItem(item: BufferItem): item is TextItem | SpaceItem {
-			return item.type === 'text' || item.type === 'space';
-		}
-
-		if (this.#align === 'right') {
-			let last;
-
-			for (let i = this.#buffer.length - 1; i >= 0; i--) {
-				if (isTextOrSpaceItem(this.#buffer[i])) {
-					last = i;
-					break;
-				}
-			}
-
-			if (typeof last === 'number') {
-				const lastItem = this.#buffer[last];
-				if (lastItem.type === 'space' && lastItem.size > this.style.width) {
-					lastItem.size -= this.style.width;
-					this.#cursor -= this.style.width;
-				}
-
-				if (lastItem.type === 'text' && lastItem.value.endsWith(' ')) {
-					lastItem.value = lastItem.value.slice(0, -1);
-					this.#cursor -= this.style.width;
-				}
-			}
-
-			result = this.#merge([
-				{ type: 'space', size: this.#columns - this.#cursor },
-				...this.#stored,
-				...this.#buffer,
-				...store
-			]);
-		}
-
-		if (this.#align === 'center') {
-			const left = (this.#columns - this.#cursor) >> 1;
-
-			result = this.#merge([
-				{ type: 'space', size: left },
-				...this.#stored,
-				...this.#buffer,
-				...store,
-				{ type: 'space', size: this.#embedded ? this.#columns - this.#cursor - left : 0 }
-			]);
-		}
-
-		if (this.#align === 'left') {
-			result = this.#merge([
-				...this.#stored,
-				...this.#buffer,
-				...store,
-				{ type: 'space', size: this.#embedded ? this.#columns - this.#cursor : 0 }
-			]);
-		}
-
-		this.#stored = restore;
-		this.#buffer = [];
-		this.#cursor = 0;
-
-		if (result.length === 0 && options.forceNewline) {
-			result.push({ type: 'empty' });
-		}
-
-		return result;
-	}
-
-	/**
-	 * Flush the contents of the line buffer
-	 *
-	 * @param  {options}   options   Options for flushing the buffer
-	 */
-	flush(options?: BufferOptions) {
-		options = Object.assign(
-			{
-				forceNewline: false
-			},
-			options || {}
-		);
+		/* Check the alignment of the current line */
 
 		const align: { current: TextAlign; next: TextAlign | null } = {
 			current: this.#align,
@@ -277,18 +202,110 @@ class LineComposer {
 			}
 		}
 
+		this.#align = align.current;
+
 		/* Fetch the contents of the line buffer */
 
-		this.#align = align.current;
+		let result: BufferItem[] = [];
+
+		const restore = this.style.restore();
+		const store = this.style.store();
+
+		if (this.#cursor === 0 && options.ignoreAlignment) {
+			result = this.#merge([...this.#stored, ...this.#buffer, ...store]);
+		} else {
+			if (this.#align === 'right') {
+				let last;
+
+				/* Find index of last text or space element */
+
+				for (let i = this.#buffer.length - 1; i >= 0; i--) {
+					if (this.#buffer[i].type === 'text' || this.#buffer[i].type === 'space') {
+						last = i;
+						break;
+					}
+				}
+
+				/* Remove trailing spaces from lines */
+
+				if (typeof last === 'number') {
+					const lastItem = this.#buffer[last];
+
+					if (isSpaceItem(lastItem) && lastItem.size > this.style.width) {
+						lastItem.size -= this.style.width;
+						this.#cursor -= this.style.width;
+					}
+
+					if (isTextItem(lastItem) && lastItem.value.endsWith(' ')) {
+						lastItem.value = lastItem.value.slice(0, -1);
+						this.#cursor -= this.style.width;
+					}
+				}
+
+				result = this.#merge([
+					{ type: 'space', size: this.#columns - this.#cursor },
+					...this.#stored,
+					...this.#buffer,
+					...store
+				]);
+			}
+
+			if (this.#align === 'center') {
+				const left = (this.#columns - this.#cursor) >> 1;
+
+				result = this.#merge([
+					{ type: 'space', size: left },
+					...this.#stored,
+					...this.#buffer,
+					...store,
+					{ type: 'space', size: this.#embedded ? this.#columns - this.#cursor - left : 0 }
+				]);
+			}
+
+			if (this.#align === 'left') {
+				result = this.#merge([
+					...this.#stored,
+					...this.#buffer,
+					...store,
+					{ type: 'space', size: this.#embedded ? this.#columns - this.#cursor : 0 }
+				]);
+			}
+		}
+
+		this.#stored = restore;
+		this.#buffer = [];
+		this.#cursor = 0;
+
+		if (result.length === 0 && options.forceNewline) {
+			result.push({ type: 'empty' });
+		}
+
+		if (align.next) {
+			this.#align = align.next;
+		}
+
+		return result;
+	}
+
+	/**
+	 * Flush the contents of the line buffer
+	 *
+	 * @param  {options}   options   Options for flushing the buffer
+	 */
+	flush(options?: BufferOptions) {
+		options = Object.assign(
+			{
+				forceNewline: false,
+				forceFlush: false,
+				ignoreAlignment: false
+			},
+			options || {}
+		);
 
 		const result = this.fetch(options);
 
 		if (result.length) {
 			this.#callback(result);
-		}
-
-		if (align.next) {
-			this.#align = align.next;
 		}
 	}
 
