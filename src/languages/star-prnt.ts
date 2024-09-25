@@ -261,10 +261,11 @@ class LanguageStarPrnt {
 	 * @param {ImageData} image     ImageData object
 	 * @param {number} width        Width of the image
 	 * @param {number} height       Height of the image
-	 * @param {string} mode         Image encoding mode (value is ignored)
+	 * @param {string} _mode         Image encoding mode (value is ignored)
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
-	image(image: ImageData, width: number, height: number, mode: ImageMode): number[] {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	image(image: ImageData, width: number, height: number, _mode: ImageMode): number[] {
 		let result = [];
 
 		const getPixel = (x: number, y: number) =>
@@ -391,10 +392,10 @@ class LanguageStarPrnt {
 
 	/**
 	 * Enable or disable italic text
-	 * @param {boolean} value   Enable or disable italic text, optional, default toggles between states
+	 * @param {boolean} _value   Enable or disable italic text, optional, default toggles between states (ignored for StarPRNT)
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	italic(value?: boolean): number[] {
+	italic(_value?: boolean): number[] {
 		return [];
 	}
 

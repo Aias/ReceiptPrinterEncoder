@@ -5,22 +5,21 @@
 	"type": "module",
 	"exports": {
 		"browser": {
-			"import": "./dist/receipt-printer-encoder.esm.js",
-			"require": "./dist/receipt-printer-encoder.umd.js",
-			"script": "./dist/receipt-printer-encoder.umd.js"
+			"import": "./dist/receipt-printer-encoder.es.js",
+			"require": "./dist/receipt-printer-encoder.umd.js"
 		},
-		"import": "./dist/receipt-printer-encoder.mjs",
-		"require": "./dist/receipt-printer-encoder.cjs"
+		"import": "./dist/receipt-printer-encoder.es.js",
+		"require": "./dist/receipt-printer-encoder.umd.js"
 	},
-	"main": "dist/receipt-printer-encoder.cjs",
-	"module": "dist/receipt-printer-encoder.mjs",
+	"main": "./dist/receipt-printer-encoder.umd.js",
+	"module": "./dist/receipt-printer-encoder.es.js",
 	"scripts": {
-		"build": "npm run generate && rollup -c rollup.config.ts --configPlugin typescript",
+		"build": "npm run generate && vite build",
 		"generate": "node --loader ts-node/esm --no-warnings tools/generate.ts",
 		"lint": "eslint --fix src/**/*.ts",
 		"mocha": "mocha test/",
 		"test": "npm run lint && mocha --require ts-node/register 'test/**/*.ts'",
-		"start": "node dist/receipt-printer-encoder.js",
+		"start": "vite",
 		"prepublishOnly": "npm run build"
 	},
 	"repository": {
@@ -42,10 +41,6 @@
 	},
 	"homepage": "https://github.com/NielsLeenheer/ReceiptPrinterEncoder#readme",
 	"devDependencies": {
-		"@rollup/plugin-commonjs": "^28.0.0",
-		"@rollup/plugin-node-resolve": "^15.3.0",
-		"@rollup/plugin-terser": "^0.4.4",
-		"@rollup/plugin-typescript": "^12.1.0",
 		"@types/chai": "^5.0.0",
 		"@types/mocha": "^10.0.8",
 		"@types/node": "^22.6.1",
@@ -55,10 +50,10 @@
 		"eslint-config-google": "^0.14.0",
 		"javascript-stringify": "^2.1.0",
 		"mocha": "^10.7.3",
-		"rollup": "^4.22.4",
 		"ts-node": "^10.9.2",
 		"tslib": "^2.7.0",
-		"typescript": "^5.6.2"
+		"typescript": "^5.6.2",
+		"vite": "^5.0.0"
 	},
 	"dependencies": {
 		"@canvas/image-data": "^1.0.0",
@@ -72,5 +67,6 @@
 		"dist",
 		"src",
 		"index.d.ts"
-	]
+	],
+	"packageManager": "yarn@4.5.0"
 }

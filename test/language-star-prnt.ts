@@ -101,7 +101,8 @@ describe('LanguageStarPrnt', function () {
 
 		it('should throw an "Unknown codepage" error', function () {
 			expect(function () {
-				let result = encoder.codepage('unknown').text('héllo').encode();
+				let result;
+				result = encoder.codepage('unknown').text('héllo').encode();
 			}).to.throw('Unknown codepage');
 		});
 	});

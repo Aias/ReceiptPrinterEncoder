@@ -1,6 +1,6 @@
-import type { PrinterDefinition, FontDefinition, Language } from './printers';
 import codepageMappings from '../../generated/mapping';
 
+export type PrinterModel = keyof typeof import('../../generated/printers').default;
 export type PrinterLanguage = keyof typeof codepageMappings;
 export type CodepageName = string;
 export type CodepageValue = number;
@@ -30,7 +30,7 @@ export interface ReceiptPrinterEncoderOptions {
 	/**
 	 * Model identifier of the printer, corresponding to keys in `printerDefinitions`.
 	 */
-	printerModel?: keyof typeof import('../generated/printers').default;
+	printerModel?: PrinterModel;
 
 	/**
 	 * Codepage mapping identifier or custom mapping object.
@@ -105,7 +105,7 @@ export interface FullReceiptPrinterEncoderOptions {
 	/**
 	 * Model identifier of the printer, corresponding to keys in `printerDefinitions`.
 	 */
-	printerModel?: keyof typeof import('../generated/printers').default;
+	printerModel?: PrinterModel;
 
 	/**
 	 * Codepage mapping identifier or custom mapping object.

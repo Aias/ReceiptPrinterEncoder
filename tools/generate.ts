@@ -3,13 +3,13 @@ import path from 'node:path';
 import { stringify } from 'javascript-stringify';
 
 // Add this function at the beginning of the file
-function ensureDirectoryExistence(filePath: string) {
+function ensureDirectoryExistence(filePath: string): boolean {
 	const dirname = path.dirname(filePath);
 	if (fs.existsSync(dirname)) {
 		return true;
 	}
-	ensureDirectoryExistence(dirname);
-	fs.mkdirSync(dirname);
+	fs.mkdirSync(dirname, { recursive: true });
+	return true;
 }
 
 function generatePrinters() {
@@ -21,7 +21,6 @@ function generatePrinters() {
 
 		for (let file of files) {
 			let data = fs.readFileSync('data/printers/' + file, 'utf8');
-			let printer;
 
 			let definition = {};
 
@@ -66,7 +65,7 @@ function generateMappings() {
 
 			for (let line of lines) {
 				if (line.length > 1 && line.charAt(0) != '#') {
-					let [skip, key, value] = line.split(/\t/);
+					let [_, key, value] = line.split(/\t/);
 					list.set(parseInt(key, 16), value.trim());
 				}
 			}
@@ -100,7 +99,7 @@ function generateMappings() {
 
 			for (let line of lines) {
 				if (line.length > 1 && line.charAt(0) != '#') {
-					let [skip, key, value] = line.split(/\t/);
+					let [_, key, value] = line.split(/\t/);
 					list.set(parseInt(key, 16), value.trim());
 				}
 			}
