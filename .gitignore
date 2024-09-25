@@ -3,5 +3,5 @@ node_modules
 examples/package-lock.json
 examples/_*
 
-dist/**
-generated/**
+dist
+generated
