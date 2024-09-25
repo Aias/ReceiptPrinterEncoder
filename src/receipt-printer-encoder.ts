@@ -24,7 +24,7 @@ import type {
 	QrCodeErrorLevel,
 	QrCodeSize,
 	QrCodeModel
-} from '@printers';
+} from './types/printers';
 import type {
 	ReceiptPrinterEncoderOptions,
 	FullReceiptPrinterEncoderOptions,

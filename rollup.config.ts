@@ -3,6 +3,11 @@ import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
 import terser from '@rollup/plugin-terser';
 
+const typescriptPlugin = typescript({
+	sourceMap: true,
+	inlineSources: true
+});
+
 export default [
 	// Browser-friendly UMD build
 	{
@@ -13,7 +18,7 @@ export default [
 			format: 'umd',
 			sourcemap: true
 		},
-		plugins: [resolve({ browser: true }), commonjs(), typescript(), terser()]
+		plugins: [resolve({ browser: true }), commonjs(), typescriptPlugin, terser()]
 	},
 
 	// Browser-friendly ES module build
@@ -24,7 +29,7 @@ export default [
 			format: 'es',
 			sourcemap: true
 		},
-		plugins: [resolve({ browser: true }), commonjs(), typescript(), terser()]
+		plugins: [resolve({ browser: true }), commonjs(), typescriptPlugin, terser()]
 	},
 
 	// CommonJS (for Node) and ES module (for bundlers) build
@@ -38,9 +43,9 @@ export default [
 			'@point-of-sale/codepage-encoder'
 		],
 		output: [
-			{ file: 'dist/receipt-printer-encoder.cjs', format: 'cjs' },
-			{ file: 'dist/receipt-printer-encoder.mjs', format: 'es' }
+			{ file: 'dist/receipt-printer-encoder.cjs', format: 'cjs', sourcemap: true },
+			{ file: 'dist/receipt-printer-encoder.mjs', format: 'es', sourcemap: true }
 		],
-		plugins: [typescript()]
+		plugins: [resolve(), commonjs(), typescriptPlugin]
 	}
 ];

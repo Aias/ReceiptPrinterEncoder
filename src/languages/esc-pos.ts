@@ -1,5 +1,5 @@
 import CodepageEncoder from '@point-of-sale/codepage-encoder';
-import { TextAlign, BarcodeOptions, ImageMode, Pdf417Options, QrCodeOptions } from '@printers';
+import { TextAlign, BarcodeOptions, ImageMode, Pdf417Options, QrCodeOptions } from '../types/printers';
 
 class LanguageEscPos {
 	/**

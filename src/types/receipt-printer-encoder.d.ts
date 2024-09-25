@@ -1,4 +1,4 @@
-import type { PrinterDefinition, FontDefinition, Language } from '@printers';
+import type { PrinterDefinition, FontDefinition, Language } from './printers';
 import codepageMappings from '../../generated/mapping';
 
 export type PrinterLanguage = keyof typeof codepageMappings;

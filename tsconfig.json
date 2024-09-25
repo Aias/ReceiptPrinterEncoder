@@ -3,19 +3,16 @@
 		"target": "ES6",
 		"module": "ESNext",
 		"moduleResolution": "node",
-		"outDir": "./dist",
 		"rootDir": "./",
 		"baseUrl": "./",
-		"paths": {
-			"@printers": ["./src/types/printers.d.ts"],
-			"@encoder": ["./src/types/receipt-printer-encoder.d.ts"]
-		},
 		"strict": true,
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"skipLibCheck": true,
-		"declaration": true
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true
 	},
-	"include": ["src", "tools", "generated"],
-	"exclude": ["node_modules", "dist", "examples"]
+	"include": ["src", "tools", "generated", "test"],
+	"exclude": ["node_modules", "dist", "data", "documentation", "examples"]
 }

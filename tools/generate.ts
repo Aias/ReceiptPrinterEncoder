@@ -1,5 +1,16 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import { stringify } from 'javascript-stringify';
+
+// Add this function at the beginning of the file
+function ensureDirectoryExistence(filePath: string) {
+	const dirname = path.dirname(filePath);
+	if (fs.existsSync(dirname)) {
+		return true;
+	}
+	ensureDirectoryExistence(dirname);
+	fs.mkdirSync(dirname);
+}
 
 function generatePrinters() {
 	let output = '';
@@ -33,7 +44,9 @@ function generatePrinters() {
 	output += '};\n\n';
 	output += 'export default printerDefinitions;\n';
 
-	fs.writeFileSync('generated/printers.ts', output, 'utf8');
+	const outputPath = 'generated/printers.ts';
+	ensureDirectoryExistence(outputPath);
+	fs.writeFileSync(outputPath, output, 'utf8');
 }
 
 function generateMappings() {
@@ -111,7 +124,9 @@ function generateMappings() {
 
 	const output = `const codepageMappings = ${mappingString};\n\nexport default codepageMappings;\n`;
 
-	fs.writeFileSync('generated/mapping.ts', output, 'utf8');
+	const outputPath = 'generated/mapping.ts';
+	ensureDirectoryExistence(outputPath);
+	fs.writeFileSync(outputPath, output, 'utf8');
 }
 
 generateMappings();

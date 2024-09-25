@@ -1,6 +1,6 @@
 import TextStyle from './text-style.js';
 import TextWrap from './text-wrap.js';
-import { TextAlign, StyleProperty, Size } from '@printers';
+import { TextAlign, StyleProperty, Size } from './types/printers';
 
 export type TextItem = {
 	type: 'text';
