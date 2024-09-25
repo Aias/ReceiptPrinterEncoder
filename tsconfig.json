@@ -26,6 +26,6 @@
 		"declarationDir": "dist",
 		"sourceMap": true
 	},
-	"include": ["src", "tools", "generated", "test"],
+	"include": ["src", "tools", "generated"],
 	"exclude": ["node_modules", "dist", "data", "documentation", "examples"]
 }
