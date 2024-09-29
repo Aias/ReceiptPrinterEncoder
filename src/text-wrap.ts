@@ -70,7 +70,7 @@ class TextWrap {
 						}
 
 						for (const piece of pieces) {
-							if (length + piece.length * width >= columns) {
+							if (length + piece.length * width > columns) {
 								chunkedLines.push(line);
 								line = [];
 								length = 0;

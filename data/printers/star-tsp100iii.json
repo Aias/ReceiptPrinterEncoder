@@ -1,6 +1,6 @@
 {
-    "vendor": "Citizen",
-    "model": "CT-S310II",
+    "vendor": "Star",
+    "model": "TSP100III",
     
     "media": {
         "dpi": 203,
@@ -8,9 +8,9 @@
     },
 
     "capabilities": {
-        "language": "esc-pos",
-        "codepages": "citizen",
-        
+        "language": "star-prnt",
+        "codepages": "star",
+
         "fonts": {
             "A": {
                 "size": "12x24",
@@ -19,10 +19,6 @@
             "B": {
                 "size": "9x24",
                 "columns": 64
-            },
-            "C": {
-                "size": "8x16",
-                "columns": 72
             }
         },
 
@@ -30,8 +26,7 @@
             "supported": true,
             "symbologies": [
                 "upca", "upce", "ean13", "ean8", "code39", "itf", "codabar", "code93", 
-                "code128", "gs1-databar-omni", "gs1-databar-truncated", 
-                "gs1-databar-limited", "gs1-databar-expanded"
+                "code128"
             ]
         },
         "qrcode": {
