@@ -1,6 +1,5 @@
 import ReceiptPrinterEncoder from '../receipt-printer-encoder';
 import { createCanvas } from 'canvas';
-import { describe, it, expect } from 'vitest';
 
 describe('LanguageEscPos', () => {
 	describe('text(hello)', () => {

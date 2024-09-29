@@ -1,5 +1,4 @@
 import ReceiptPrinterEncoder from './receipt-printer-encoder';
-import { describe, it, expect } from 'vitest';
 
 describe('ReceiptPrinterEncoder', () => {
 	describe('ReceiptPrinterEncoder({ language: unknown })', () => {

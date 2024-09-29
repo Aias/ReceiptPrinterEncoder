@@ -23,7 +23,8 @@
 		"declaration": true,
 		"declarationMap": true,
 		"declarationDir": "dist",
-		"sourceMap": true
+		"sourceMap": true,
+		"types": ["vitest/globals"]
 	},
 	"include": ["src", "tools", "generated"],
 	"exclude": ["node_modules", "dist", "data", "documentation", "examples"]
