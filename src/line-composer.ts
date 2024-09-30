@@ -2,6 +2,9 @@ import TextStyle from './text-style.js';
 import TextWrap from './text-wrap.js';
 import { TextAlign, StyleProperty, Size, CommandArray, Command } from './types/printers';
 
+export const isCommandArray = (val: CommandArray | Command): val is CommandArray =>
+	Array.isArray(val) && val.length > 0 && Array.isArray(val[0]);
+
 export type TextItem = {
 	type: 'text';
 	value: string;
@@ -136,12 +139,12 @@ class LineComposer {
 	 * @param  {number}  length  Length in characters of the value
 	 */
 	raw(value: CommandArray | Command, length?: number) {
-		if (value.length && value[0] instanceof Array) {
-			for (let i = 0; i < value.length; i++) {
-				this.add({ type: 'raw', value: value[i] as Command }, length || 0);
+		if (isCommandArray(value)) {
+			for (const command of value) {
+				this.add({ type: 'raw', value: command }, length || 0);
 			}
 		} else {
-			this.add({ type: 'raw', value: value as Command }, length || 0);
+			this.add({ type: 'raw', value }, length || 0);
 		}
 	}
 
@@ -189,8 +192,9 @@ class LineComposer {
 		};
 
 		for (let i = 0; i < this.#buffer.length - 1; i++) {
-			if (this.#buffer[i].type === 'align') {
-				align.current = (this.#buffer[i] as AlignItem).value;
+			const item = this.#buffer[i];
+			if (isAlignItem(item)) {
+				align.current = item.value;
 			}
 		}
 
@@ -392,8 +396,9 @@ class LineComposer {
 		let align = this.#align;
 
 		for (let i = 0; i < this.#buffer.length; i++) {
-			if (this.#buffer[i].type === 'align') {
-				align = (this.#buffer[i] as AlignItem).value;
+			const item = this.#buffer[i];
+			if (isAlignItem(item)) {
+				align = item.value;
 			}
 		}
 
