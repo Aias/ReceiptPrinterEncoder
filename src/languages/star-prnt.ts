@@ -1,12 +1,21 @@
 import CodepageEncoder from '@point-of-sale/codepage-encoder';
-import { TextAlign, BarcodeOptions, FontType, ImageMode, Pdf417Options, QrCodeOptions } from '../types/printers';
+import {
+	TextAlign,
+	BarcodeOptions,
+	FontType,
+	ImageMode,
+	Pdf417Options,
+	QrCodeOptions,
+	CommandArray,
+	Command
+} from '../types/printers';
 
 class LanguageStarPrnt {
 	/**
 	 * Initialize the printer
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	initialize(): number[] {
+	initialize(): Command {
 		return [
 			/* Initialize printer */
 			0x1b, 0x40, 0x18
@@ -18,7 +27,7 @@ class LanguageStarPrnt {
 	 * @param {string} type     Font type ('A', 'B' or 'C')
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	font(type: FontType): number[] {
+	font(type: FontType): Command {
 		let value: number;
 
 		switch (type) {
@@ -41,7 +50,7 @@ class LanguageStarPrnt {
 	 * @param {string} value    Alignment value ('left', 'center', 'right')
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	align(value: TextAlign): number[] {
+	align(value: TextAlign): Command {
 		let align = 0x00;
 
 		if (value === 'center') {
@@ -56,11 +65,11 @@ class LanguageStarPrnt {
 	/**
 	 * Generate a barcode
 	 * @param {string} value        Value to encode
-	 * @param {string} symbology    Barcode symbology
+	 * @param {string|number} symbology    Barcode symbology
 	 * @param {object} options      Configuration object
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
-	barcode(value: string, symbology: string, options: BarcodeOptions): number[] {
+	barcode(value: string, symbology: string | number, options: BarcodeOptions): CommandArray {
 		let result = [];
 
 		const symbologies: Record<string, number> = {
@@ -82,8 +91,8 @@ class LanguageStarPrnt {
 			'gs1-databar-expanded': 0x0d
 		};
 
-		if (typeof symbologies[symbology] === 'undefined') {
-			throw new Error('Symbology not supported by printer');
+		if (typeof symbology === 'string' && typeof symbologies[symbology] === 'undefined') {
+			throw new Error(`Symbology '${symbology}' not supported by language`);
 		}
 
 		if (options.width < 1 || options.width > 3) {
@@ -100,16 +109,9 @@ class LanguageStarPrnt {
 
 		const bytes = CodepageEncoder.encode(value, 'ascii');
 
-		result.push(
-			0x1b,
-			0x62,
-			symbologies[symbology],
-			options.text ? 0x02 : 0x01,
-			options.width,
-			options.height,
-			...bytes,
-			0x1e
-		);
+		const identifier = typeof symbology === 'string' ? symbologies[symbology] : symbology;
+
+		result.push(0x1b, 0x62, identifier, options.text ? 0x02 : 0x01, options.width, options.height, ...bytes, 0x1e);
 
 		return result;
 	}
@@ -120,18 +122,18 @@ class LanguageStarPrnt {
 	 * @param {object} options      Configuration object
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
-	qrcode(value: string, options: QrCodeOptions): number[] {
+	qrcode(value: string, options: QrCodeOptions): CommandArray {
 		let result = [];
 
 		/* Model */
 
-		const models: Record<number, number> = {
+		const models = {
 			1: 0x01,
 			2: 0x02
 		};
 
 		if (options.model in models) {
-			result.push(0x1b, 0x1d, 0x79, 0x53, 0x30, models[options.model]);
+			result.push([0x1b, 0x1d, 0x79, 0x53, 0x30, models[options.model]]);
 		} else {
 			throw new Error('Model must be 1 or 2');
 		}
@@ -146,11 +148,11 @@ class LanguageStarPrnt {
 			throw new Error('Size must be between 1 and 8');
 		}
 
-		result.push(0x1b, 0x1d, 0x79, 0x53, 0x32, options.size);
+		result.push([0x1b, 0x1d, 0x79, 0x53, 0x32, options.size]);
 
 		/* Error level */
 
-		const errorlevels: Record<string, number> = {
+		const errorlevels = {
 			l: 0x00,
 			m: 0x01,
 			q: 0x02,
@@ -158,7 +160,7 @@ class LanguageStarPrnt {
 		};
 
 		if (options.errorlevel in errorlevels) {
-			result.push(0x1b, 0x1d, 0x79, 0x53, 0x31, errorlevels[options.errorlevel]);
+			result.push([0x1b, 0x1d, 0x79, 0x53, 0x31, errorlevels[options.errorlevel]]);
 		} else {
 			throw new Error('Error level must be l, m, q or h');
 		}
@@ -168,11 +170,11 @@ class LanguageStarPrnt {
 		const bytes = CodepageEncoder.encode(value, 'iso8859-1');
 		const length = bytes.length;
 
-		result.push(0x1b, 0x1d, 0x79, 0x44, 0x31, 0x00, length & 0xff, (length >> 8) & 0xff, ...bytes);
+		result.push([0x1b, 0x1d, 0x79, 0x44, 0x31, 0x00, length & 0xff, (length >> 8) & 0xff, ...bytes]);
 
 		/* Print QR code */
 
-		result.push(0x1b, 0x1d, 0x79, 0x50);
+		result.push([0x1b, 0x1d, 0x79, 0x50]);
 
 		return result;
 	}
@@ -183,7 +185,7 @@ class LanguageStarPrnt {
 	 * @param {object} options      Configuration object
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
-	pdf417(value: string, options: Pdf417Options): number[] {
+	pdf417(value: string, options: Pdf417Options): CommandArray {
 		let result = [];
 
 		/* Columns and Rows */
@@ -204,7 +206,7 @@ class LanguageStarPrnt {
 			throw new Error('Rows must be 0, or between 3 and 90');
 		}
 
-		result.push(0x1b, 0x1d, 0x78, 0x53, 0x30, 0x01, options.rows, options.columns);
+		result.push([0x1b, 0x1d, 0x78, 0x53, 0x30, 0x01, options.rows, options.columns]);
 
 		/* Width */
 
@@ -216,7 +218,7 @@ class LanguageStarPrnt {
 			throw new Error('Width must be between 2 and 8');
 		}
 
-		result.push(0x1b, 0x1d, 0x78, 0x53, 0x32, options.width);
+		result.push([0x1b, 0x1d, 0x78, 0x53, 0x32, options.width]);
 
 		/* Height */
 
@@ -228,7 +230,7 @@ class LanguageStarPrnt {
 			throw new Error('Height must be between 2 and 8');
 		}
 
-		result.push(0x1b, 0x1d, 0x78, 0x53, 0x33, options.height);
+		result.push([0x1b, 0x1d, 0x78, 0x53, 0x33, options.height]);
 
 		/* Error level */
 
@@ -240,18 +242,18 @@ class LanguageStarPrnt {
 			throw new Error('Errorlevel must be between 0 and 8');
 		}
 
-		result.push(0x1b, 0x1d, 0x78, 0x53, 0x31, options.errorlevel);
+		result.push([0x1b, 0x1d, 0x78, 0x53, 0x31, options.errorlevel]);
 
 		/* Data */
 
 		const bytes = CodepageEncoder.encode(value, 'ascii');
 		const length = bytes.length;
 
-		result.push(0x1b, 0x1d, 0x78, 0x44, length & 0xff, (length >> 8) & 0xff, ...bytes);
+		result.push([0x1b, 0x1d, 0x78, 0x44, length & 0xff, (length >> 8) & 0xff, ...bytes]);
 
 		/* Print PDF417 code */
 
-		result.push(0x1b, 0x1d, 0x78, 0x50);
+		result.push([0x1b, 0x1d, 0x78, 0x50]);
 
 		return result;
 	}
@@ -265,13 +267,13 @@ class LanguageStarPrnt {
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	image(image: ImageData, width: number, height: number, _mode: ImageMode): number[] {
+	image(image: ImageData, width: number, height: number, _mode: ImageMode): CommandArray {
 		let result = [];
 
 		const getPixel = (x: number, y: number) =>
 			typeof image.data[(width * y + x) * 4] === 'undefined' || image.data[(width * y + x) * 4] > 0 ? 0 : 1;
 
-		result.push(0x1b, 0x30);
+		result.push([0x1b, 0x30]);
 
 		for (let s = 0; s < height / 24; s++) {
 			const y = s * 24;
@@ -311,10 +313,10 @@ class LanguageStarPrnt {
 					getPixel(x, y + 23);
 			}
 
-			result.push(0x1b, 0x58, width & 0xff, (width >> 8) & 0xff, ...bytes, 0x0a, 0x0d);
+			result.push([0x1b, 0x58, width & 0xff, (width >> 8) & 0xff, ...bytes, 0x0a, 0x0d]);
 		}
 
-		result.push(0x1b, 0x7a, 0x01);
+		result.push([0x1b, 0x7a, 0x01]);
 
 		return result;
 	}
@@ -324,7 +326,7 @@ class LanguageStarPrnt {
 	 * @param {string} value    Cut type ('full' or 'partial')
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	cut(value?: 'full' | 'partial'): number[] {
+	cut(value?: 'full' | 'partial'): Command {
 		let data = 0x00;
 
 		if (value == 'partial') {
@@ -341,7 +343,7 @@ class LanguageStarPrnt {
 	 * @param {number} off      Pulse OFF time
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	pulse(device?: number, on?: number, off?: number): number[] {
+	pulse(device?: number, on?: number, off?: number): Command {
 		if (typeof device === 'undefined') {
 			device = 0;
 		}
@@ -365,7 +367,7 @@ class LanguageStarPrnt {
 	 * @param {boolean} value   Enable or disable bold text, optional, default toggles between states
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	bold(value?: boolean): number[] {
+	bold(value?: boolean): Command {
 		let data = 0x46;
 
 		if (value) {
@@ -380,7 +382,7 @@ class LanguageStarPrnt {
 	 * @param {boolean} value   Enable or disable underline text, optional, default toggles between states
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	underline(value?: boolean): number[] {
+	underline(value?: boolean): Command {
 		let data = 0x00;
 
 		if (value) {
@@ -395,7 +397,7 @@ class LanguageStarPrnt {
 	 * @param {boolean} _value   Enable or disable italic text, optional, default toggles between states (ignored for StarPRNT)
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	italic(_value?: boolean): number[] {
+	italic(_value?: boolean): Command {
 		return [];
 	}
 
@@ -404,7 +406,7 @@ class LanguageStarPrnt {
 	 * @param {boolean} value   Enable or disable inverted text, optional, default toggles between states
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	invert(value?: boolean): number[] {
+	invert(value?: boolean): Command {
 		let data = 0x35;
 
 		if (value) {
@@ -420,7 +422,7 @@ class LanguageStarPrnt {
 	 * @param {number} height   Height of the text (1-8)
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	size(width: number, height: number): number[] {
+	size(width: number, height: number): Command {
 		return [0x1b, 0x69, height - 1, width - 1];
 	}
 
@@ -429,7 +431,7 @@ class LanguageStarPrnt {
 	 * @param {number} value    Codepage value
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	codepage(value: number): number[] {
+	codepage(value: number): Command {
 		return [0x1b, 0x1d, 0x74, value];
 	}
 
@@ -437,8 +439,11 @@ class LanguageStarPrnt {
 	 * Flush the printers line buffer
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	flush(): number[] {
-		return [0x1b, 0x1d, 0x50, 0x30, 0x1b, 0x1d, 0x50, 0x31];
+	flush(): CommandArray {
+		return [
+			[0x1b, 0x1d, 0x50, 0x30],
+			[0x1b, 0x1d, 0x50, 0x31]
+		];
 	}
 }
 

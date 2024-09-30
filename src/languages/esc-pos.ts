@@ -1,21 +1,29 @@
 import CodepageEncoder from '@point-of-sale/codepage-encoder';
-import { TextAlign, BarcodeOptions, ImageMode, Pdf417Options, QrCodeOptions } from '../types/printers';
+import {
+	TextAlign,
+	BarcodeOptions,
+	ImageMode,
+	Pdf417Options,
+	QrCodeOptions,
+	CommandArray,
+	Command
+} from '../types/printers';
 
 class LanguageEscPos {
 	/**
 	 * Initialize the printer
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	initialize(): number[] {
+	initialize(): CommandArray {
 		return [
 			/* Initialize printer */
-			0x1b, 0x40,
+			[0x1b, 0x40],
 
 			/* Cancel Kanji mode */
-			0x1c, 0x2e,
+			[0x1c, 0x2e],
 
 			/* Set the font to A */
-			0x1b, 0x4d, 0x00
+			[0x1b, 0x4d, 0x00]
 		];
 	}
 
@@ -24,7 +32,7 @@ class LanguageEscPos {
 	 * @param {string} type     Font type ('A', 'B', or more)
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	font(type: string): number[] {
+	font(type: string): Command {
 		let value = type.charCodeAt(0) - 0x41;
 
 		return [0x1b, 0x4d, value];
@@ -35,7 +43,7 @@ class LanguageEscPos {
 	 * @param {string} value    Alignment value ('left', 'center', 'right')
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	align(value?: TextAlign): number[] {
+	align(value?: TextAlign): Command {
 		let align: number;
 
 		switch (value) {
@@ -56,12 +64,12 @@ class LanguageEscPos {
 	/**
 	 * Generate a barcode
 	 * @param {string} value        Value to encode
-	 * @param {string} symbology    Barcode symbology
+	 * @param {string|number} symbology    Barcode symbology
 	 * @param {object} options      Configuration object
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
-	barcode(value: string, symbology: string, options: BarcodeOptions): number[] {
-		let result: number[] = [];
+	barcode(value: string, symbology: string | number, options: BarcodeOptions): CommandArray {
+		let result: CommandArray = [];
 
 		const symbologies: Record<string, number> = {
 			'upca': 0x00,
@@ -84,8 +92,8 @@ class LanguageEscPos {
 			'code128-auto': 0x4f
 		};
 
-		if (typeof symbologies[symbology] === 'undefined') {
-			throw new Error('Symbology not supported by printer');
+		if (typeof symbology === 'string' && typeof symbologies[symbology] === 'undefined') {
+			throw new Error(`Symbology '${symbology}' not supported by language`);
 		}
 
 		/* Calculate segment width */
@@ -112,7 +120,7 @@ class LanguageEscPos {
 
 		/* Set barcode options */
 
-		result.push(0x1d, 0x68, options.height, 0x1d, 0x77, width, 0x1d, 0x48, options.text ? 0x02 : 0x00);
+		result.push([0x1d, 0x68, options.height], [0x1d, 0x77, width], [0x1d, 0x48, options.text ? 0x02 : 0x00]);
 
 		/* Encode barcode */
 
@@ -127,14 +135,16 @@ class LanguageEscPos {
 
 		const bytes = CodepageEncoder.encode(value, 'ascii');
 
-		if (symbologies[symbology] > 0x40) {
+		const identifier = typeof symbology === 'string' ? symbologies[symbology] : symbology;
+
+		if (identifier > 0x40) {
 			/* Function B symbologies */
 
-			result.push(0x1d, 0x6b, symbologies[symbology], bytes.length, ...bytes);
+			result.push([0x1d, 0x6b, identifier, bytes.length, ...bytes]);
 		} else {
 			/* Function A symbologies */
 
-			result.push(0x1d, 0x6b, symbologies[symbology], ...bytes, 0x00);
+			result.push([0x1d, 0x6b, identifier, ...bytes, 0x00]);
 		}
 
 		return result;
@@ -146,20 +156,22 @@ class LanguageEscPos {
 	 * @param {object} options      Configuration object
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
-	qrcode(value: string, options: QrCodeOptions): number[] {
-		let result = [];
+	qrcode(value: string, options: QrCodeOptions): CommandArray {
+		let result: CommandArray = [];
 
 		/* Model */
 
-		const models: Record<number, number> = {
-			1: 0x31,
-			2: 0x32
-		};
+		if (typeof options.model === 'number') {
+			const models = {
+				1: 0x31,
+				2: 0x32
+			};
 
-		if (options.model in models) {
-			result.push(0x1d, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, models[options.model], 0x00);
-		} else {
-			throw new Error('Model must be 1 or 2');
+			if (options.model in models) {
+				result.push([0x1d, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, models[options.model], 0x00]);
+			} else {
+				throw new Error('Model must be 1 or 2');
+			}
 		}
 
 		/* Size */
@@ -172,7 +184,7 @@ class LanguageEscPos {
 			throw new Error('Size must be between 1 and 8');
 		}
 
-		result.push(0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, options.size);
+		result.push([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, options.size]);
 
 		/* Error level */
 
@@ -184,7 +196,7 @@ class LanguageEscPos {
 		};
 
 		if (options.errorlevel in errorlevels) {
-			result.push(0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, errorlevels[options.errorlevel]);
+			result.push([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, errorlevels[options.errorlevel]]);
 		} else {
 			throw new Error('Error level must be l, m, q or h');
 		}
@@ -194,11 +206,11 @@ class LanguageEscPos {
 		const bytes = CodepageEncoder.encode(value, 'iso8859-1');
 		const length = bytes.length + 3;
 
-		result.push(0x1d, 0x28, 0x6b, length & 0xff, (length >> 8) & 0xff, 0x31, 0x50, 0x30, ...bytes);
+		result.push([0x1d, 0x28, 0x6b, length & 0xff, (length >> 8) & 0xff, 0x31, 0x50, 0x30, ...bytes]);
 
 		/* Print QR code */
 
-		result.push(0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30);
+		result.push([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30]);
 
 		return result;
 	}
@@ -209,7 +221,7 @@ class LanguageEscPos {
 	 * @param {object} options      Configuration object
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
-	pdf417(value: string, options: Pdf417Options): number[] {
+	pdf417(value: string, options: Pdf417Options): CommandArray {
 		let result = [];
 
 		/* Columns */
@@ -222,7 +234,7 @@ class LanguageEscPos {
 			throw new Error('Columns must be 0, or between 1 and 30');
 		}
 
-		result.push(0x1d, 0x28, 0x6b, 0x03, 0x00, 0x30, 0x41, options.columns);
+		result.push([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x30, 0x41, options.columns]);
 
 		/* Rows */
 
@@ -234,7 +246,7 @@ class LanguageEscPos {
 			throw new Error('Rows must be 0, or between 3 and 90');
 		}
 
-		result.push(0x1d, 0x28, 0x6b, 0x03, 0x00, 0x30, 0x42, options.rows);
+		result.push([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x30, 0x42, options.rows]);
 
 		/* Width */
 
@@ -246,7 +258,7 @@ class LanguageEscPos {
 			throw new Error('Width must be between 2 and 8');
 		}
 
-		result.push(0x1d, 0x28, 0x6b, 0x03, 0x00, 0x30, 0x43, options.width);
+		result.push([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x30, 0x43, options.width]);
 
 		/* Height */
 
@@ -258,7 +270,7 @@ class LanguageEscPos {
 			throw new Error('Height must be between 2 and 8');
 		}
 
-		result.push(0x1d, 0x28, 0x6b, 0x03, 0x00, 0x30, 0x44, options.height);
+		result.push([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x30, 0x44, options.height]);
 
 		/* Error level */
 
@@ -270,22 +282,22 @@ class LanguageEscPos {
 			throw new Error('Errorlevel must be between 0 and 8');
 		}
 
-		result.push(0x1d, 0x28, 0x6b, 0x04, 0x00, 0x30, 0x45, 0x30, options.errorlevel + 0x30);
+		result.push([0x1d, 0x28, 0x6b, 0x04, 0x00, 0x30, 0x45, 0x30, options.errorlevel + 0x30]);
 
 		/* Model: standard or truncated */
 
-		result.push(0x1d, 0x28, 0x6b, 0x03, 0x00, 0x30, 0x46, options.truncated ? 0x01 : 0x00);
+		result.push([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x30, 0x46, options.truncated ? 0x01 : 0x00]);
 
 		/* Data */
 
 		const bytes = CodepageEncoder.encode(value, 'ascii');
 		const length = bytes.length + 3;
 
-		result.push(0x1d, 0x28, 0x6b, length & 0xff, (length >> 8) & 0xff, 0x30, 0x50, 0x30, ...bytes);
+		result.push([0x1d, 0x28, 0x6b, length & 0xff, (length >> 8) & 0xff, 0x30, 0x50, 0x30, ...bytes]);
 
 		/* Print PDF417 code */
 
-		result.push(0x1d, 0x28, 0x6b, 0x03, 0x00, 0x30, 0x51, 0x30);
+		result.push([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x30, 0x51, 0x30]);
 
 		return result;
 	}
@@ -298,7 +310,7 @@ class LanguageEscPos {
 	 * @param {string} mode         Image encoding mode ('column' or 'raster')
 	 * @returns {Array}             Array of bytes to send to the printer
 	 */
-	image(image: ImageData, width: number, height: number, mode: ImageMode): number[] {
+	image(image: ImageData, width: number, height: number, mode: ImageMode): CommandArray {
 		let result = [];
 
 		const getPixel = (x: number, y: number) =>
@@ -341,19 +353,19 @@ class LanguageEscPos {
 		/* Encode images with ESC * */
 
 		if (mode == 'column') {
-			result.push(0x1b, 0x33, 0x24);
+			result.push([0x1b, 0x33, 0x24]);
 
 			getColumnData(width, height).forEach((bytes) => {
-				result.push(0x1b, 0x2a, 0x21, width & 0xff, (width >> 8) & 0xff, ...bytes, 0x0a);
+				result.push([0x1b, 0x2a, 0x21, width & 0xff, (width >> 8) & 0xff, ...bytes, 0x0a]);
 			});
 
-			result.push(0x1b, 0x32);
+			result.push([0x1b, 0x32]);
 		}
 
 		/* Encode images with GS v */
 
 		if (mode == 'raster') {
-			result.push(
+			result.push([
 				0x1d,
 				0x76,
 				0x30,
@@ -363,7 +375,7 @@ class LanguageEscPos {
 				height & 0xff,
 				(height >> 8) & 0xff,
 				...getRowData(width, height)
-			);
+			]);
 		}
 
 		return result;
@@ -374,7 +386,7 @@ class LanguageEscPos {
 	 * @param {string} value    Cut type ('full' or 'partial')
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	cut(value?: 'full' | 'partial'): number[] {
+	cut(value?: 'full' | 'partial'): Command {
 		let data = 0x00;
 
 		if (value == 'partial') {
@@ -391,7 +403,7 @@ class LanguageEscPos {
 	 * @param {number} off      Pulse OFF time
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	pulse(device?: number, on?: number, off?: number): number[] {
+	pulse(device?: number, on?: number, off?: number): Command {
 		if (typeof device === 'undefined') {
 			device = 0;
 		}
@@ -415,7 +427,7 @@ class LanguageEscPos {
 	 * @param {boolean} value   Enable or disable bold text, optional, default toggles between states
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	bold(value?: boolean): number[] {
+	bold(value?: boolean): Command {
 		let data = 0x00;
 
 		if (value) {
@@ -430,7 +442,7 @@ class LanguageEscPos {
 	 * @param {boolean} value   Enable or disable underline text, optional, default toggles between states
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	underline(value?: boolean): number[] {
+	underline(value?: boolean): Command {
 		let data = 0x00;
 
 		if (value) {
@@ -445,7 +457,7 @@ class LanguageEscPos {
 	 * @param {boolean} value   Enable or disable italic text, optional, default toggles between states
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	italic(value?: boolean): number[] {
+	italic(value?: boolean): Command {
 		let data = 0x00;
 
 		if (value) {
@@ -460,7 +472,7 @@ class LanguageEscPos {
 	 * @param {boolean} value   Enable or disable inverted text, optional, default toggles between states
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	invert(value?: boolean): number[] {
+	invert(value?: boolean): Command {
 		let data = 0x00;
 
 		if (value) {
@@ -476,7 +488,7 @@ class LanguageEscPos {
 	 * @param {number} height   Height of the text (1-8)
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	size(width: number, height: number): number[] {
+	size(width: number, height: number): Command {
 		return [0x1d, 0x21, (height - 1) | ((width - 1) << 4)];
 	}
 
@@ -485,7 +497,7 @@ class LanguageEscPos {
 	 * @param {number} value    Codepage value
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	codepage(value: number): number[] {
+	codepage(value: number): Command {
 		return [0x1b, 0x74, value];
 	}
 
@@ -493,7 +505,7 @@ class LanguageEscPos {
 	 * Flush the printers line buffer
 	 * @returns {Array}         Array of bytes to send to the printer
 	 */
-	flush(): number[] {
+	flush(): Command {
 		return [];
 	}
 }

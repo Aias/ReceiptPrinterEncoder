@@ -1,4 +1,6 @@
+import { BufferItem } from 'src/line-composer';
 import codepageMappings from '../../generated/mapping';
+import { ImageMode } from './printers';
 
 export type PrinterModel = keyof typeof import('../../generated/printers').default;
 export type PrinterLanguage = keyof typeof codepageMappings;
@@ -13,152 +15,28 @@ export type CodepageMappingIdentifier = Exclude<
 export type CodepageMapping = Record<CodepageName, CodepageValue>;
 export type CodepageDefinitions = Record<PrinterLanguage, Record<CodepageMappingIdentifier, (CodepageName | null)[]>>;
 
-/**
- * Optional parameters that can be supplied to the ReceiptPrinterEncoder constructor.
- */
-export interface ReceiptPrinterEncoderOptions {
-	/**
-	 * Number of columns for the receipt. Overrides `width` if provided.
-	 */
-	columns?: number;
+export type ErrorLevel = 'relaxed' | 'strict';
 
-	/**
-	 * Language protocol for the printer. Supported values are 'esc-pos', 'star-prnt', and 'star-line'.
-	 */
-	language?: PrinterLanguage;
+export interface BaseEncoderOptions {}
 
-	/**
-	 * Model identifier of the printer, corresponding to keys in `printerDefinitions`.
-	 */
-	printerModel?: PrinterModel;
-
-	/**
-	 * Codepage mapping identifier or custom mapping object.
-	 */
-	codepageMapping?: CodepageMappingIdentifier | CodepageMapping;
-
-	/**
-	 * Array of codepage identifiers to attempt during auto-encoding. Can be null.
-	 */
-	codepageCandidates?: CodepageName[] | null;
-
-	/**
-	 * Width of the receipt paper. If provided, it overrides the `columns` option.
-	 */
-	width?: number;
-
-	/**
-	 * Height of the receipt (if applicable).
-	 */
-	height?: number;
-
-	/**
-	 * Mode for handling images. Common values might include 'raster', 'column', etc.
-	 */
-	imageMode?: string;
-
-	/**
-	 * Number of feed lines before cutting the paper.
-	 */
-	feedBeforeCut?: number;
-
-	/**
-	 * Newline character(s) to use. Defaults to '\n\r'.
-	 */
-	newline?: string;
-
-	/**
-	 * Enables or disables debug mode. Defaults to `false`.
-	 */
-	debug?: boolean;
-
-	/**
-	 * Automatically flushes the print buffer based on internal logic. Defaults to `true` for StarPRNT printers.
-	 */
-	autoFlush?: boolean;
-
-	/**
-	 * Indicates whether the encoder is embedded within another structure (e.g., a table cell or box).
-	 */
-	embedded?: boolean;
-
-	/**
-	 * Function to create a canvas, primarily used in environments like Node.js.
-	 */
-	createCanvas?: ((width: number, height: number) => any) | null;
-}
-
-/**
- * Complete set of options used internally by ReceiptPrinterEncoder after merging user inputs with defaults.
- */
-export interface FullReceiptPrinterEncoderOptions {
-	/**
-	 * Number of columns for the receipt.
-	 */
+export interface EncoderConfiguration {
 	columns: number;
-
-	/**
-	 * Language protocol for the printer.
-	 */
 	language: PrinterLanguage;
-
-	/**
-	 * Model identifier of the printer, corresponding to keys in `printerDefinitions`.
-	 */
 	printerModel?: PrinterModel;
-
-	/**
-	 * Codepage mapping identifier or custom mapping object.
-	 */
 	codepageMapping: CodepageMappingIdentifier | CodepageMapping;
-
-	/**
-	 * Array of codepage identifiers to attempt during auto-encoding. Can be null.
-	 */
 	codepageCandidates?: CodepageName[] | null;
-
-	/**
-	 * Width of the receipt paper.
-	 */
 	width?: number;
-
-	/**
-	 * Height of the receipt (if applicable).
-	 */
 	height?: number;
-
-	/**
-	 * Mode for handling images.
-	 */
-	imageMode: 'column' | 'raster';
-
-	/**
-	 * Number of feed lines before cutting the paper.
-	 */
+	imageMode: ImageMode;
 	feedBeforeCut: number;
-
-	/**
-	 * Newline character(s) to use.
-	 */
 	newline: string;
-
-	/**
-	 * Enables or disables debug mode.
-	 */
 	debug: boolean;
-
-	/**
-	 * Indicates whether the encoder is embedded within another structure.
-	 */
 	embedded: boolean;
-
-	/**
-	 * Function to create a canvas.
-	 */
 	createCanvas?: ((width: number, height: number) => any) | null;
-
-	/**
-	 * Automatically flushes the print buffer based on internal logic. Defaults to `true` for StarPRNT printers.
-	 */
 	autoFlush?: boolean;
+	errors?: ErrorLevel;
 }
+
+export type CommandQueue = { commands: BufferItem[]; height: number }[];
+
+export interface EncoderOptions extends Partial<EncoderConfiguration> {}

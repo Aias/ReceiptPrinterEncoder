@@ -148,12 +148,10 @@ describe('LanguageEscPos', () => {
 	});
 
 	describe('width(2).height(2).text(hello).width(1).height(1)', () => {
-		it('should be [ 29, 33, 16, 29, 33, 17, ..., 29, 33, 1, 29, 33, 0, 10, 13 ]', () => {
+		it('should be [ 29, 33, 17, ..., 29, 33, 0, 10, 13 ]', () => {
 			let encoder = new ReceiptPrinterEncoder({ language: 'esc-pos' });
 			let result = encoder.width(2).height(2).text('hello').width(1).height(1).encode();
-			expect(result).toEqual(
-				new Uint8Array([29, 33, 16, 29, 33, 17, 104, 101, 108, 108, 111, 29, 33, 1, 29, 33, 0, 10, 13])
-			);
+			expect(result).toEqual(new Uint8Array([29, 33, 17, 104, 101, 108, 108, 111, 29, 33, 0, 10, 13]));
 		});
 	});
 

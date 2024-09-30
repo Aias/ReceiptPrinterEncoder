@@ -1,18 +1,19 @@
 import { PrinterLanguage, CodepageMappingIdentifier } from './receipt-printer-encoder';
 
-type StringWithAutocomplete<T> = T | (string & Record<never, never>);
 export type TextAlign = 'left' | 'center' | 'right';
 export type VerticalAlign = 'top' | 'bottom';
 export type StyleProperty = 'bold' | 'italic' | 'underline' | 'invert';
+export type LineStyle = 'single' | 'double' | 'none';
 export type Size = { width: number; height: number };
-export type FontType = StringWithAutocomplete<'A' | 'B' | 'C' | 'D' | 'E'>; //https://x.com/diegohaz/status/1524257274012876801
+export type FontType = keyof PrinterCapabilities['fonts'];
+export type ImageMode = 'column' | 'raster';
 
 export interface FontDefinition {
-	size: FontType;
+	size: string;
 	columns: number;
 }
 
-export interface Capabilities {
+export interface PrinterCapabilities {
 	language: PrinterLanguage;
 	codepages: CodepageMappingIdentifier;
 	newline?: string;
@@ -23,16 +24,21 @@ export interface Capabilities {
 		D?: FontDefinition;
 		E?: FontDefinition;
 	};
-}
-
-export interface Media {
-	dpi: number;
-	width: number;
-}
-
-export type ImageMode = 'column' | 'raster';
-
-export interface Features {
+	barcodes: {
+		supported: boolean;
+		symbologies: string[];
+	};
+	qrcode: {
+		supported: boolean;
+		models: string[];
+	};
+	pdf417: {
+		supported: boolean;
+		fallback?: {
+			type: string;
+			symbology: number;
+		};
+	};
 	images?: {
 		mode: ImageMode;
 	};
@@ -41,21 +47,19 @@ export interface Features {
 	};
 }
 
-export interface USBInterface {
-	productName: string;
-}
-
-export interface Interfaces {
-	usb?: USBInterface;
-}
-
 export interface PrinterDefinition {
 	vendor: string;
 	model: string;
-	interfaces?: Interfaces;
-	media: Media;
-	capabilities: Capabilities;
-	features?: Features;
+	media: {
+		dpi: number;
+		width: number;
+	};
+	interfaces?: {
+		usb?: {
+			productName: string;
+		};
+	};
+	capabilities: PrinterCapabilities;
 }
 
 export interface Pdf417Options {
@@ -83,7 +87,7 @@ export interface BarcodeOptions {
 }
 
 export interface BoxOptions {
-	style: 'single' | 'double' | 'none';
+	style: LineStyle;
 	align?: TextAlign;
 	width: number;
 	marginLeft: number;
@@ -91,6 +95,9 @@ export interface BoxOptions {
 	paddingLeft: number;
 	paddingRight: number;
 }
+
+export type Command = number[];
+export type CommandArray = Command[];
 
 export const printerDefinitions: {
 	[key: string]: PrinterDefinition;

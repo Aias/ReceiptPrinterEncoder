@@ -1,6 +1,6 @@
 import TextStyle from './text-style.js';
 import TextWrap from './text-wrap.js';
-import { TextAlign, StyleProperty, Size } from './types/printers';
+import { TextAlign, StyleProperty, Size, CommandArray, Command } from './types/printers';
 
 export type TextItem = {
 	type: 'text';
@@ -17,7 +17,7 @@ export const isSpaceItem = (item: BufferItem): item is SpaceItem => item.type ==
 
 export type RawItem = {
 	type: 'raw';
-	value: number[];
+	value: Command;
 };
 export const isRawItem = (item: BufferItem): item is RawItem => item.type === 'raw';
 
@@ -135,12 +135,14 @@ class LineComposer {
 	 * @param  {array}   value   Array of bytes to add to the line
 	 * @param  {number}  length  Length in characters of the value
 	 */
-	raw(value: number[], length?: number) {
-		if (value instanceof Array) {
-			value = value.flat();
+	raw(value: CommandArray | Command, length?: number) {
+		if (value.length && value[0] instanceof Array) {
+			for (let i = 0; i < value.length; i++) {
+				this.add({ type: 'raw', value: value[i] as Command }, length || 0);
+			}
+		} else {
+			this.add({ type: 'raw', value: value as Command }, length || 0);
 		}
-
-		this.add({ type: 'raw', value }, length || 0);
 	}
 
 	/**
@@ -338,6 +340,17 @@ class LineComposer {
 				if (allowMerge) {
 					lastItem.value += item.value;
 					lastItem.codepage = lastItem.codepage || item.codepage;
+					continue;
+				}
+
+				result.push(item);
+				last++;
+			} else if (isStyleItem(item) && item.property === 'size') {
+				const lastItem = result[last];
+				const allowMerge = last >= 0 && isStyleItem(lastItem) && lastItem.property === 'size';
+
+				if (allowMerge) {
+					lastItem.value = item.value;
 					continue;
 				}
 

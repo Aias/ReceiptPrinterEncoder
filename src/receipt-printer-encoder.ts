@@ -11,7 +11,6 @@ import LanguageStarPrnt from './languages/star-prnt';
 import LineComposer, { LineCommands, type BufferItem } from './line-composer';
 import type {
 	PrinterDefinition,
-	FontDefinition,
 	FontType,
 	TextAlign,
 	StyleProperty,
@@ -23,15 +22,21 @@ import type {
 	VerticalAlign,
 	QrCodeErrorLevel,
 	QrCodeSize,
-	QrCodeModel
+	QrCodeModel,
+	PrinterCapabilities,
+	CommandArray,
+	Command
 } from './types/printers';
 import type {
-	ReceiptPrinterEncoderOptions,
-	FullReceiptPrinterEncoderOptions,
+	EncoderOptions,
+	EncoderConfiguration,
 	CodepageName,
 	CodepageValue,
 	CodepageDefinitions,
-	CodepageMapping
+	CodepageMapping,
+	ErrorLevel,
+	CommandQueue,
+	CodepageMappingIdentifier
 } from './types/receipt-printer-encoder';
 
 /* Import generated data */
@@ -42,7 +47,7 @@ import printerDefinitionsMap from '../generated/printers';
 const printerDefinitions = printerDefinitionsMap as Record<string, PrinterDefinition>;
 const codepageMappings = codepageMappingData as CodepageDefinitions;
 
-const defaultConfiguration: FullReceiptPrinterEncoderOptions = {
+const defaultConfiguration: EncoderConfiguration = {
 	columns: 42,
 	language: 'esc-pos',
 	imageMode: 'column',
@@ -52,22 +57,52 @@ const defaultConfiguration: FullReceiptPrinterEncoderOptions = {
 	// codepageCandidates: null,
 	debug: false,
 	embedded: false,
-	createCanvas: null
+	createCanvas: null,
+	errors: 'relaxed'
 };
 
 /**
  * Create a byte stream based on commands for receipt printers
  */
 class ReceiptPrinterEncoder {
-	#options: FullReceiptPrinterEncoderOptions = defaultConfiguration;
+	#options: EncoderConfiguration = defaultConfiguration;
 	#queue: BufferItem[][] = [];
 
 	#language: LanguageEscPos | LanguageStarPrnt;
 	#composer: LineComposer;
 
-	#fontMapping: Record<string, FontDefinition> = {
-		A: { size: '12x24', columns: 42 },
-		B: { size: '9x24', columns: 56 }
+	#printerCapabilities: PrinterCapabilities = {
+		language: defaultConfiguration.language,
+		codepages: defaultConfiguration.codepageMapping as CodepageMappingIdentifier,
+		fonts: {
+			A: { size: '12x24', columns: 42 },
+			B: { size: '9x24', columns: 56 }
+		},
+		barcodes: {
+			supported: true,
+			symbologies: [
+				'upca',
+				'upce',
+				'ean13',
+				'ean8',
+				'code39',
+				'itf',
+				'codabar',
+				'code93',
+				'code128',
+				'gs1-databar-omni',
+				'gs1-databar-truncated',
+				'gs1-databar-limited',
+				'gs1-databar-expanded'
+			]
+		},
+		qrcode: {
+			supported: true,
+			models: ['1', '2']
+		},
+		pdf417: {
+			supported: true
+		}
 	};
 
 	#codepageMapping: CodepageMapping;
@@ -87,10 +122,10 @@ class ReceiptPrinterEncoder {
 	 *
 	 * @param  {object}   options   Object containing configuration options
 	 */
-	constructor(options: ReceiptPrinterEncoderOptions) {
+	constructor(options?: EncoderOptions) {
 		options = options || {};
 
-		const defaults: FullReceiptPrinterEncoderOptions = {
+		const defaults: EncoderConfiguration = {
 			...defaultConfiguration
 		};
 
@@ -108,20 +143,16 @@ class ReceiptPrinterEncoder {
 				throw new Error('Unknown printer model');
 			}
 
-			const printerDefinition = printerDefinitions[options.printerModel];
+			this.#printerCapabilities = printerDefinitions[options.printerModel].capabilities;
 
 			/* Apply the printer definition to the defaults */
 
-			defaults.columns = printerDefinition.capabilities.fonts['A'].columns;
-			defaults.language = printerDefinition.capabilities.language;
-			defaults.codepageMapping = printerDefinition.capabilities.codepages;
-			defaults.newline = printerDefinition.capabilities?.newline ?? defaults.newline;
-			defaults.feedBeforeCut = printerDefinition.features?.cutter?.feed || defaults.feedBeforeCut;
-			defaults.imageMode = printerDefinition.features?.images?.mode || defaults.imageMode;
-
-			/* Apply the font mapping */
-
-			this.#fontMapping = printerDefinition.capabilities.fonts;
+			defaults.columns = this.#printerCapabilities.fonts['A'].columns;
+			defaults.language = this.#printerCapabilities.language;
+			defaults.codepageMapping = this.#printerCapabilities.codepages || defaults.codepageMapping;
+			defaults.newline = this.#printerCapabilities?.newline || defaults.newline;
+			defaults.feedBeforeCut = this.#printerCapabilities?.cutter?.feed || defaults.feedBeforeCut;
+			defaults.imageMode = this.#printerCapabilities?.images?.mode || defaults.imageMode;
 		}
 
 		/* Merge options */
@@ -470,17 +501,20 @@ class ReceiptPrinterEncoder {
 		let matchedFontType: FontType | undefined;
 		const matches = value.match(/^[0-9]+x[0-9]+$/);
 		if (matches) {
-			matchedFontType = Object.entries(this.#fontMapping).find((i) => i[1].size == matches[0])?.[0];
+			matchedFontType = Object.entries(this.#printerCapabilities.fonts).find(
+				(i) => i[1].size == matches[0]
+			)?.[0] as FontType | undefined;
 		}
 
 		/* Make sure the font name is uppercase */
 
 		matchedFontType = (matchedFontType?.toUpperCase() || 'A') as FontType;
+		const matchedFont = this.#printerCapabilities.fonts[matchedFontType];
 
 		/* Check if the font is supported */
 
-		if (typeof this.#fontMapping[value] === 'undefined') {
-			throw new Error('Unsupported font');
+		if (!matchedFont) {
+			return this.#error('This font is not supported by this printer', 'relaxed');
 		}
 
 		/* Change the font */
@@ -495,7 +529,7 @@ class ReceiptPrinterEncoder {
 			this.#composer.columns = this.#options.columns;
 		} else {
 			this.#composer.columns =
-				(this.#options.columns / this.#fontMapping['A'].columns) * this.#fontMapping[matchedFontType].columns;
+				(this.#options.columns / this.#printerCapabilities.fonts['A'].columns) * matchedFont.columns;
 		}
 
 		return this;
@@ -774,12 +808,12 @@ class ReceiptPrinterEncoder {
 	 * Barcode
 	 *
 	 * @param  {string}           value  the value of the barcode
-	 * @param  {string}           symbology  the type of the barcode
+	 * @param  {string|number}           symbology  the type of the barcode
 	 * @param  {number|object}    height  Either the configuration object, or backwards compatible height of the barcode
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	barcode(value: string, symbology: string, height?: number | BarcodeOptions): ReceiptPrinterEncoder {
+	barcode(value: string, symbology: string | number, height?: number | BarcodeOptions): ReceiptPrinterEncoder {
 		let options = {
 			height: 60,
 			width: 2,
@@ -797,6 +831,16 @@ class ReceiptPrinterEncoder {
 		if (this.#options.embedded) {
 			throw new Error('Barcodes are not supported in table cells or boxes');
 		}
+
+		if (this.#printerCapabilities.barcodes.supported === false) {
+			return this.#error('Barcodes are not supported by this printer', 'relaxed');
+		}
+
+		if (typeof symbology === 'string' && !this.#printerCapabilities.barcodes.symbologies.includes(symbology)) {
+			return this.#error(`Symbology '${symbology}' not supported by this printer`, 'relaxed');
+		}
+
+		/* Force printing the print buffer and moving to a new line */
 
 		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
 
@@ -864,6 +908,14 @@ class ReceiptPrinterEncoder {
 			throw new Error('QR codes are not supported in table cells or boxes');
 		}
 
+		if (this.#printerCapabilities.qrcode.supported === false) {
+			return this.#error('QR codes are not supported by this printer', 'relaxed');
+		}
+
+		if (options.model && !this.#printerCapabilities.qrcode.models.includes(String(options.model))) {
+			return this.#error('QR code model is not supported by this printer', 'relaxed');
+		}
+
 		/* Force printing the print buffer and moving to a new line */
 
 		this.#composer.flush({ forceFlush: true, ignoreAlignment: true });
@@ -912,6 +964,16 @@ class ReceiptPrinterEncoder {
 
 		if (this.#options.embedded) {
 			throw new Error('PDF417 codes are not supported in table cells or boxes');
+		}
+
+		if (this.#printerCapabilities.pdf417.supported === false) {
+			/* If possible, fallback to a barcode with symbology */
+
+			if (typeof this.#printerCapabilities.pdf417.fallback === 'object') {
+				return this.barcode(value, this.#printerCapabilities.pdf417.fallback.symbology);
+			}
+
+			return this.#error('PDF417 codes are not supported by this printer', 'relaxed');
 		}
 
 		/* Force printing the print buffer and moving to a new line */
@@ -1173,7 +1235,7 @@ class ReceiptPrinterEncoder {
 	 * @param  {boolean}         value     Is the property enabled or disabled
 	 * @return {array}                     Return the encoded bytes
 	 */
-	#encodeStyle(property: StyleProperty | 'size', value: boolean | Size): number[] {
+	#encodeStyle(property: StyleProperty | 'size', value: boolean | Size): Command {
 		if (property === 'bold') {
 			return this.#language.bold(value as boolean);
 		}
@@ -1232,19 +1294,19 @@ class ReceiptPrinterEncoder {
 	 *
 	 * @return {array}         All the commands currently in the queue
 	 */
-	commands(): { commands: BufferItem[]; height: number }[] {
-		const result: { commands: BufferItem[]; height: number }[] = [];
+	commands(): CommandQueue {
+		/* Flush the printer line buffer if needed */
+
+		if (this.#options.autoFlush && !this.#options.embedded) {
+			this.#composer.raw(this.#language.flush());
+		}
+
+		const result: CommandQueue = [];
 
 		const remaining = this.#composer.fetch({ forceFlush: true, ignoreAlignment: true });
 
 		if (remaining.length) {
 			this.#queue.push(remaining);
-		}
-
-		/* Flush the printer line buffer if needed */
-
-		if (this.#options.autoFlush && !this.#options.embedded) {
-			this.#queue.push([{ type: 'raw', value: this.#language.flush() }]);
 		}
 
 		/* Process all lines in the queue */
@@ -1290,7 +1352,7 @@ class ReceiptPrinterEncoder {
 	 */
 	encode(): Uint8Array {
 		const commands = this.commands();
-		const result: number[][] = [];
+		const result: CommandArray = [];
 
 		for (const line of commands) {
 			for (const item of line.commands) {
@@ -1320,6 +1382,25 @@ class ReceiptPrinterEncoder {
 	}
 
 	/**
+	 * Throw an error
+	 *
+	 * @param  {string}          message  The error message
+	 * @param  {string}          level    The error level, if level is strict,
+	 *                                    an error will be thrown, if level is relaxed,
+	 *                                    a warning will be logged
+	 * @return {object}          Return the object, for easy chaining commands
+	 */
+	#error(message: string, level: ErrorLevel): ReceiptPrinterEncoder {
+		if (level === 'strict' || this.#options.errors === 'strict') {
+			throw new Error(message);
+		}
+
+		console.warn(message);
+
+		return this;
+	}
+
+	/**
 	 * Get all supported printer models
 	 *
 	 * @return {object}         An object with all supported printer models
@@ -1343,6 +1424,14 @@ class ReceiptPrinterEncoder {
 	 */
 	get language(): string {
 		return this.#options.language;
+	}
+
+	/**
+	 * Get the capabilities of the printer
+	 * @return {object}         The capabilities of the printer
+	 */
+	get printerCapabilities(): PrinterCapabilities {
+		return this.#printerCapabilities;
 	}
 }
 
