@@ -1,2 +1,2 @@
-export * from './src/types/printers';
-export * from './src/types/receipt-printer-encoder';
+export * from './dist/receipt-printer-encoder';
+export { default } from './dist/receipt-printer-encoder';

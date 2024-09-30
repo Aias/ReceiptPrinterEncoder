@@ -27,20 +27,20 @@
 	"type": "module",
 	"exports": {
 		"browser": {
-			"import": "./dist/receipt-printer-encoder.es.js",
+			"import": "./dist/receipt-printer-encoder.esm.js",
 			"require": "./dist/receipt-printer-encoder.umd.js"
 		},
-		"import": "./dist/receipt-printer-encoder.es.js",
-		"require": "./dist/receipt-printer-encoder.umd.js"
+		"import": "./dist/receipt-printer-encoder.mjs",
+		"require": "./dist/receipt-printer-encoder.cjs"
 	},
-	"main": "./dist/receipt-printer-encoder.umd.js",
-	"module": "./dist/receipt-printer-encoder.es.js",
-	"types": "./index.d.ts",
+	"main": "./dist/receipt-printer-encoder.cjs",
+	"module": "./dist/receipt-printer-encoder.mjs",
+	"types": "./dist/receipt-printer-encoder.d.ts",
 	"files": [
 		"dist"
 	],
 	"scripts": {
-		"build": "pnpm generate && vite build",
+		"build": "pnpm generate && tsup",
 		"generate": "node --loader ts-node/esm --no-warnings tools/generate.ts",
 		"lint": "eslint --fix src/**/*.ts",
 		"prepublishOnly": "pnpm build",
@@ -57,6 +57,7 @@
 		"javascript-stringify": "^2.1.0",
 		"ts-node": "^10.9.2",
 		"tslib": "^2.7.0",
+		"tsup": "^8.3.0",
 		"typescript": "^5.6.2",
 		"vitest": "^2.1.1"
 	},
