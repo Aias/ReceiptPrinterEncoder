@@ -37,13 +37,16 @@
 	"module": "./dist/receipt-printer-encoder.mjs",
 	"types": "./dist/receipt-printer-encoder.d.ts",
 	"files": [
-		"dist"
+		"src",
+		"tools",
+		"generated",
+		"data"
 	],
 	"scripts": {
 		"build": "pnpm generate && tsup",
 		"generate": "node --loader ts-node/esm --no-warnings tools/generate.ts",
 		"lint": "eslint --fix src/**/*.ts",
-		"prepublishOnly": "pnpm build",
+		"postinstall": "pnpm build",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"type-check": "tsc --noEmit"
