@@ -1,10 +1,10 @@
 {
-	"name": "@point-of-sale/receipt-printer-encoder",
+	"name": "@aias/receipt-printer-encoder",
 	"version": "3.1.2",
 	"description": "Create a set of commands that can be send to any receipt printer that supports ESC/POS, StarLine or StarPRNT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/NielsLeenheer/ReceiptPrinterEncoder.git"
+		"url": "git+https://github.com/Aias/ReceiptPrinterEncoder.git"
 	},
 	"keywords": [
 		"pos",
@@ -21,9 +21,9 @@
 	],
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/NielsLeenheer/ReceiptPrinterEncoder/issues"
+		"url": "https://github.com/Aias/ReceiptPrinterEncoder/issues"
 	},
-	"homepage": "https://github.com/NielsLeenheer/ReceiptPrinterEncoder#readme",
+	"homepage": "https://github.com/Aias/ReceiptPrinterEncoder#readme",
 	"type": "module",
 	"exports": {
 		"browser": {
