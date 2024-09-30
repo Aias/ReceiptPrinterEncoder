@@ -27,11 +27,23 @@
 	"type": "module",
 	"exports": {
 		"browser": {
-			"import": "./dist/receipt-printer-encoder.esm.js",
-			"require": "./dist/receipt-printer-encoder.umd.js"
+			"import": {
+				"types": "./dist/receipt-printer-encoder.d.ts",
+				"default": "./dist/receipt-printer-encoder.esm.js"
+			},
+			"require": {
+				"types": "./dist/receipt-printer-encoder.d.cts",
+				"default": "./dist/receipt-printer-encoder.umd.js"
+			}
 		},
-		"import": "./dist/receipt-printer-encoder.mjs",
-		"require": "./dist/receipt-printer-encoder.cjs"
+		"import": {
+			"types": "./dist/receipt-printer-encoder.d.ts",
+			"default": "./dist/receipt-printer-encoder.mjs"
+		},
+		"require": {
+			"types": "./dist/receipt-printer-encoder.d.cts",
+			"default": "./dist/receipt-printer-encoder.cjs"
+		}
 	},
 	"main": "./dist/receipt-printer-encoder.cjs",
 	"module": "./dist/receipt-printer-encoder.mjs",
