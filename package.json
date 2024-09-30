@@ -44,7 +44,6 @@
 		"generate": "node --loader ts-node/esm --no-warnings tools/generate.ts",
 		"lint": "eslint --fix src/**/*.ts",
 		"prepublishOnly": "pnpm build",
-		"start": "vite",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"type-check": "tsc --noEmit"
@@ -59,7 +58,6 @@
 		"ts-node": "^10.9.2",
 		"tslib": "^2.7.0",
 		"typescript": "^5.6.2",
-		"vite": "^5.4.8",
 		"vitest": "^2.1.1"
 	},
 	"dependencies": {
