@@ -3,7 +3,7 @@ import { PrinterLanguage, CodepageMappingIdentifier } from './receipt-printer-en
 export type TextAlign = 'left' | 'center' | 'right';
 export type VerticalAlign = 'top' | 'bottom';
 export type StyleProperty = 'bold' | 'italic' | 'underline' | 'invert';
-export type LineStyle = 'single' | 'double' | 'none';
+export type LineStyle = 'single' | 'double';
 export type Size = { width: number; height: number };
 export type FontType = keyof PrinterCapabilities['fonts'];
 export type ImageMode = 'column' | 'raster';
@@ -63,10 +63,10 @@ export interface PrinterDefinition {
 }
 
 export interface Pdf417Options {
-	columns: number;
-	rows: number;
 	width: number;
 	height: number;
+	columns: number;
+	rows: number;
 	errorlevel: number;
 	truncated: boolean;
 }
@@ -80,6 +80,11 @@ export interface QrCodeOptions {
 	errorlevel: QrCodeErrorLevel;
 }
 
+export interface RuleOptions {
+	style: LineStyle;
+	width: number;
+}
+
 export interface BarcodeOptions {
 	width: number;
 	height: number;
@@ -87,8 +92,8 @@ export interface BarcodeOptions {
 }
 
 export interface BoxOptions {
-	style: LineStyle;
-	align?: TextAlign;
+	style: LineStyle | 'none';
+	align: TextAlign;
 	width: number;
 	marginLeft: number;
 	marginRight: number;

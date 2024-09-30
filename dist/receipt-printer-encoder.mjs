@@ -2670,15 +2670,13 @@ var _ReceiptPrinterEncoder = class _ReceiptPrinterEncoder {
    *
    */
   rule(options) {
-    options = Object.assign(
-      {
-        style: "single",
-        width: __privateGet(this, _options).columns || 10
-      },
-      options || {}
-    );
+    const defaultOptions = {
+      style: "single",
+      width: __privateGet(this, _options).columns || 10
+    };
+    const mergedOptions = { ...defaultOptions, ...options };
     __privateGet(this, _composer).flush();
-    __privateGet(this, _composer).text((options.style === "double" ? "\u2550" : "\u2500").repeat(options.width), "cp437");
+    __privateGet(this, _composer).text((mergedOptions.style === "double" ? "\u2550" : "\u2500").repeat(mergedOptions.width), "cp437");
     __privateGet(this, _composer).flush();
     return this;
   }
@@ -2699,34 +2697,33 @@ var _ReceiptPrinterEncoder = class _ReceiptPrinterEncoder {
    *
    */
   box(options, contents) {
-    options = Object.assign(
-      {
-        style: "single",
-        width: __privateGet(this, _options).columns,
-        marginLeft: 0,
-        marginRight: 0,
-        paddingLeft: 0,
-        paddingRight: 0
-      },
-      options || {}
-    );
-    if (options.width + options.marginLeft + options.marginRight > __privateGet(this, _options).columns) {
+    const defaultOptions = {
+      style: "single",
+      align: "left",
+      width: __privateGet(this, _options).columns,
+      marginLeft: 0,
+      marginRight: 0,
+      paddingLeft: 0,
+      paddingRight: 0
+    };
+    const mergedOptions = { ...defaultOptions, ...options };
+    if (mergedOptions.width + mergedOptions.marginLeft + mergedOptions.marginRight > __privateGet(this, _options).columns) {
       throw new Error("Box is too wide");
     }
     let elements = [];
-    if (options.style == "single") {
+    if (mergedOptions.style == "single") {
       elements = ["\u250C", "\u2510", "\u2514", "\u2518", "\u2500", "\u2502"];
-    } else if (options.style == "double") {
+    } else if (mergedOptions.style == "double") {
       elements = ["\u2554", "\u2557", "\u255A", "\u255D", "\u2550", "\u2551"];
     }
     const columnEncoder = new _ReceiptPrinterEncoder(
       Object.assign({}, __privateGet(this, _options), {
-        width: options.width - (options.style == "none" ? 0 : 2) - options.paddingLeft - options.paddingRight,
+        width: mergedOptions.width - (mergedOptions.style == "none" ? 0 : 2) - mergedOptions.paddingLeft - mergedOptions.paddingRight,
         embedded: true
       })
     );
     columnEncoder.codepage(__privateGet(this, _codepage));
-    columnEncoder.align(options.align || "left");
+    columnEncoder.align(mergedOptions.align);
     if (typeof contents === "function") {
       contents(columnEncoder);
     }
@@ -2735,41 +2732,41 @@ var _ReceiptPrinterEncoder = class _ReceiptPrinterEncoder {
     }
     const lines = columnEncoder.commands();
     __privateGet(this, _composer).flush();
-    if (options.style != "none") {
-      __privateGet(this, _composer).space(options.marginLeft);
+    if (mergedOptions.style != "none") {
+      __privateGet(this, _composer).space(mergedOptions.marginLeft);
       __privateGet(this, _composer).text(elements[0], "cp437");
-      __privateGet(this, _composer).text(elements[4].repeat(options.width - 2), "cp437");
+      __privateGet(this, _composer).text(elements[4].repeat(mergedOptions.width - 2), "cp437");
       __privateGet(this, _composer).text(elements[1], "cp437");
-      __privateGet(this, _composer).space(options.marginRight);
+      __privateGet(this, _composer).space(mergedOptions.marginRight);
       __privateGet(this, _composer).flush();
     }
     for (let i = 0; i < lines.length; i++) {
-      __privateGet(this, _composer).space(options.marginLeft);
-      if (options.style != "none") {
+      __privateGet(this, _composer).space(mergedOptions.marginLeft);
+      if (mergedOptions.style != "none") {
         __privateGet(this, _composer).style.height = lines[i].height;
         __privateGet(this, _composer).text(elements[5], "cp437");
         __privateGet(this, _composer).style.height = 1;
       }
-      __privateGet(this, _composer).space(options.paddingLeft);
+      __privateGet(this, _composer).space(mergedOptions.paddingLeft);
       __privateGet(this, _composer).add(
         lines[i].commands,
-        options.width - (options.style == "none" ? 0 : 2) - options.paddingLeft - options.paddingRight
+        mergedOptions.width - (mergedOptions.style == "none" ? 0 : 2) - mergedOptions.paddingLeft - mergedOptions.paddingRight
       );
-      __privateGet(this, _composer).space(options.paddingRight);
-      if (options.style != "none") {
+      __privateGet(this, _composer).space(mergedOptions.paddingRight);
+      if (mergedOptions.style != "none") {
         __privateGet(this, _composer).style.height = lines[i].height;
         __privateGet(this, _composer).text(elements[5], "cp437");
         __privateGet(this, _composer).style.height = 1;
       }
-      __privateGet(this, _composer).space(options.marginRight);
+      __privateGet(this, _composer).space(mergedOptions.marginRight);
       __privateGet(this, _composer).flush();
     }
-    if (options.style != "none") {
-      __privateGet(this, _composer).space(options.marginLeft);
+    if (mergedOptions.style != "none") {
+      __privateGet(this, _composer).space(mergedOptions.marginLeft);
       __privateGet(this, _composer).text(elements[2], "cp437");
-      __privateGet(this, _composer).text(elements[4].repeat(options.width - 2), "cp437");
+      __privateGet(this, _composer).text(elements[4].repeat(mergedOptions.width - 2), "cp437");
       __privateGet(this, _composer).text(elements[3], "cp437");
-      __privateGet(this, _composer).space(options.marginRight);
+      __privateGet(this, _composer).space(mergedOptions.marginRight);
       __privateGet(this, _composer).flush();
     }
     return this;
@@ -2873,17 +2870,15 @@ var _ReceiptPrinterEncoder = class _ReceiptPrinterEncoder {
    *
    */
   pdf417(value, options) {
-    options = Object.assign(
-      {
-        width: 3,
-        height: 3,
-        columns: 0,
-        rows: 0,
-        errorlevel: 1,
-        truncated: false
-      },
-      options || {}
-    );
+    const defaultOptions = {
+      width: 3,
+      height: 3,
+      columns: 0,
+      rows: 0,
+      errorlevel: 1,
+      truncated: false
+    };
+    const mergedOptions = { ...defaultOptions, ...options };
     if (__privateGet(this, _options).embedded) {
       throw new Error("PDF417 codes are not supported in table cells or boxes");
     }
@@ -2897,7 +2892,7 @@ var _ReceiptPrinterEncoder = class _ReceiptPrinterEncoder {
     if (__privateGet(this, _composer).align !== "left") {
       __privateGet(this, _composer).raw(__privateGet(this, _language).align(__privateGet(this, _composer).align));
     }
-    __privateGet(this, _composer).raw(__privateGet(this, _language).pdf417(value, options));
+    __privateGet(this, _composer).raw(__privateGet(this, _language).pdf417(value, mergedOptions));
     if (__privateGet(this, _composer).align !== "left") {
       __privateGet(this, _composer).raw(__privateGet(this, _language).align("left"));
     }

@@ -25,7 +25,8 @@ import type {
 	QrCodeModel,
 	PrinterCapabilities,
 	CommandArray,
-	Command
+	Command,
+	RuleOptions
 } from './types/printers';
 import type {
 	EncoderOptions,
@@ -669,18 +670,16 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                   Return the object, for easy chaining commands
 	 *
 	 */
-	rule(options?: { style: string; width: number }): ReceiptPrinterEncoder {
-		options = Object.assign(
-			{
-				style: 'single',
-				width: this.#options.columns || 10
-			},
-			options || {}
-		);
+	rule(options?: Partial<RuleOptions>): ReceiptPrinterEncoder {
+		const defaultOptions: RuleOptions = {
+			style: 'single',
+			width: this.#options.columns || 10
+		};
+		const mergedOptions = { ...defaultOptions, ...options };
 
 		this.#composer.flush();
 
-		this.#composer.text((options.style === 'double' ? '═' : '─').repeat(options.width), 'cp437');
+		this.#composer.text((mergedOptions.style === 'double' ? '═' : '─').repeat(mergedOptions.width), 'cp437');
 		this.#composer.flush();
 
 		return this;
@@ -702,28 +701,30 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                     Return the object, for easy chaining commands
 	 *
 	 */
-	box(options: BoxOptions, contents: string | ((encoder: ReceiptPrinterEncoder) => void)): ReceiptPrinterEncoder {
-		options = Object.assign(
-			{
-				style: 'single',
-				width: this.#options.columns,
-				marginLeft: 0,
-				marginRight: 0,
-				paddingLeft: 0,
-				paddingRight: 0
-			},
-			options || {}
-		);
+	box(
+		options: Partial<BoxOptions>,
+		contents: string | ((encoder: ReceiptPrinterEncoder) => void)
+	): ReceiptPrinterEncoder {
+		const defaultOptions: BoxOptions = {
+			style: 'single',
+			align: 'left',
+			width: this.#options.columns,
+			marginLeft: 0,
+			marginRight: 0,
+			paddingLeft: 0,
+			paddingRight: 0
+		};
+		const mergedOptions = { ...defaultOptions, ...options };
 
-		if (options.width + options.marginLeft + options.marginRight > this.#options.columns) {
+		if (mergedOptions.width + mergedOptions.marginLeft + mergedOptions.marginRight > this.#options.columns) {
 			throw new Error('Box is too wide');
 		}
 
 		let elements: string[] = [];
 
-		if (options.style == 'single') {
+		if (mergedOptions.style == 'single') {
 			elements = ['┌', '┐', '└', '┘', '─', '│'];
-		} else if (options.style == 'double') {
+		} else if (mergedOptions.style == 'double') {
 			elements = ['╔', '╗', '╚', '╝', '═', '║'];
 		}
 
@@ -731,13 +732,17 @@ class ReceiptPrinterEncoder {
 
 		const columnEncoder = new ReceiptPrinterEncoder(
 			Object.assign({}, this.#options, {
-				width: options.width - (options.style == 'none' ? 0 : 2) - options.paddingLeft - options.paddingRight,
+				width:
+					mergedOptions.width -
+					(mergedOptions.style == 'none' ? 0 : 2) -
+					mergedOptions.paddingLeft -
+					mergedOptions.paddingRight,
 				embedded: true
 			})
 		);
 
 		columnEncoder.codepage(this.#codepage);
-		columnEncoder.align(options.align || 'left');
+		columnEncoder.align(mergedOptions.align);
 
 		if (typeof contents === 'function') {
 			contents(columnEncoder);
@@ -753,51 +758,54 @@ class ReceiptPrinterEncoder {
 
 		this.#composer.flush();
 
-		if (options.style != 'none') {
-			this.#composer.space(options.marginLeft);
+		if (mergedOptions.style != 'none') {
+			this.#composer.space(mergedOptions.marginLeft);
 			this.#composer.text(elements[0], 'cp437');
-			this.#composer.text(elements[4].repeat(options.width - 2), 'cp437');
+			this.#composer.text(elements[4].repeat(mergedOptions.width - 2), 'cp437');
 			this.#composer.text(elements[1], 'cp437');
-			this.#composer.space(options.marginRight);
+			this.#composer.space(mergedOptions.marginRight);
 			this.#composer.flush();
 		}
 
 		/* Content */
 
 		for (let i = 0; i < lines.length; i++) {
-			this.#composer.space(options.marginLeft);
+			this.#composer.space(mergedOptions.marginLeft);
 
-			if (options.style != 'none') {
+			if (mergedOptions.style != 'none') {
 				this.#composer.style.height = lines[i].height;
 				this.#composer.text(elements[5], 'cp437');
 				this.#composer.style.height = 1;
 			}
 
-			this.#composer.space(options.paddingLeft);
+			this.#composer.space(mergedOptions.paddingLeft);
 			this.#composer.add(
 				lines[i].commands,
-				options.width - (options.style == 'none' ? 0 : 2) - options.paddingLeft - options.paddingRight
+				mergedOptions.width -
+					(mergedOptions.style == 'none' ? 0 : 2) -
+					mergedOptions.paddingLeft -
+					mergedOptions.paddingRight
 			);
-			this.#composer.space(options.paddingRight);
+			this.#composer.space(mergedOptions.paddingRight);
 
-			if (options.style != 'none') {
+			if (mergedOptions.style != 'none') {
 				this.#composer.style.height = lines[i].height;
 				this.#composer.text(elements[5], 'cp437');
 				this.#composer.style.height = 1;
 			}
 
-			this.#composer.space(options.marginRight);
+			this.#composer.space(mergedOptions.marginRight);
 			this.#composer.flush();
 		}
 
 		/* Footer */
 
-		if (options.style != 'none') {
-			this.#composer.space(options.marginLeft);
+		if (mergedOptions.style != 'none') {
+			this.#composer.space(mergedOptions.marginLeft);
 			this.#composer.text(elements[2], 'cp437');
-			this.#composer.text(elements[4].repeat(options.width - 2), 'cp437');
+			this.#composer.text(elements[4].repeat(mergedOptions.width - 2), 'cp437');
 			this.#composer.text(elements[3], 'cp437');
-			this.#composer.space(options.marginRight);
+			this.#composer.space(mergedOptions.marginRight);
 			this.#composer.flush();
 		}
 
@@ -813,8 +821,12 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                  Return the object, for easy chaining commands
 	 *
 	 */
-	barcode(value: string, symbology: string | number, height?: number | BarcodeOptions): ReceiptPrinterEncoder {
-		let options = {
+	barcode(
+		value: string,
+		symbology: string | number,
+		height?: number | Partial<BarcodeOptions>
+	): ReceiptPrinterEncoder {
+		let options: BarcodeOptions = {
 			height: 60,
 			width: 2,
 			text: false
@@ -878,7 +890,7 @@ class ReceiptPrinterEncoder {
 	 */
 	qrcode(
 		value: string,
-		model?: QrCodeModel | QrCodeOptions,
+		model?: QrCodeModel | Partial<QrCodeOptions>,
 		size?: QrCodeSize,
 		errorlevel?: QrCodeErrorLevel
 	): ReceiptPrinterEncoder {
@@ -949,18 +961,16 @@ class ReceiptPrinterEncoder {
 	 * @return {object}                     Return the object, for easy chaining commands
 	 *
 	 */
-	pdf417(value: string, options: Pdf417Options): ReceiptPrinterEncoder {
-		options = Object.assign(
-			{
-				width: 3,
-				height: 3,
-				columns: 0,
-				rows: 0,
-				errorlevel: 1,
-				truncated: false
-			},
-			options || {}
-		);
+	pdf417(value: string, options: Partial<Pdf417Options>): ReceiptPrinterEncoder {
+		const defaultOptions: Pdf417Options = {
+			width: 3,
+			height: 3,
+			columns: 0,
+			rows: 0,
+			errorlevel: 1,
+			truncated: false
+		};
+		const mergedOptions = { ...defaultOptions, ...options };
 
 		if (this.#options.embedded) {
 			throw new Error('PDF417 codes are not supported in table cells or boxes');
@@ -988,7 +998,7 @@ class ReceiptPrinterEncoder {
 
 		/* PDF417 code */
 
-		this.#composer.raw(this.#language.pdf417(value, options));
+		this.#composer.raw(this.#language.pdf417(value, mergedOptions));
 
 		/* Reset alignment */
 

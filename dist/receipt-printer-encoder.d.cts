@@ -1205,7 +1205,7 @@ interface EncoderOptions extends Partial<EncoderConfiguration> {}
 type TextAlign = 'left' | 'center' | 'right';
 type VerticalAlign = 'top' | 'bottom';
 type StyleProperty = 'bold' | 'italic' | 'underline' | 'invert';
-type LineStyle = 'single' | 'double' | 'none';
+type LineStyle = 'single' | 'double';
 type Size = { width: number; height: number };
 type ImageMode = 'column' | 'raster';
 
@@ -1249,10 +1249,10 @@ interface PrinterCapabilities {
 }
 
 interface Pdf417Options {
-	columns: number;
-	rows: number;
 	width: number;
 	height: number;
+	columns: number;
+	rows: number;
 	errorlevel: number;
 	truncated: boolean;
 }
@@ -1266,6 +1266,11 @@ interface QrCodeOptions {
 	errorlevel: QrCodeErrorLevel;
 }
 
+interface RuleOptions {
+	style: LineStyle;
+	width: number;
+}
+
 interface BarcodeOptions {
 	width: number;
 	height: number;
@@ -1273,8 +1278,8 @@ interface BarcodeOptions {
 }
 
 interface BoxOptions {
-	style: LineStyle;
-	align?: TextAlign;
+	style: LineStyle | 'none';
+	align: TextAlign;
 	width: number;
 	marginLeft: number;
 	marginRight: number;
@@ -1434,10 +1439,7 @@ declare class ReceiptPrinterEncoder {
      * @return {object}                   Return the object, for easy chaining commands
      *
      */
-    rule(options?: {
-        style: string;
-        width: number;
-    }): ReceiptPrinterEncoder;
+    rule(options?: Partial<RuleOptions>): ReceiptPrinterEncoder;
     /**
      * Insert a box
      *
@@ -1454,7 +1456,7 @@ declare class ReceiptPrinterEncoder {
      * @return {object}                     Return the object, for easy chaining commands
      *
      */
-    box(options: BoxOptions, contents: string | ((encoder: ReceiptPrinterEncoder) => void)): ReceiptPrinterEncoder;
+    box(options: Partial<BoxOptions>, contents: string | ((encoder: ReceiptPrinterEncoder) => void)): ReceiptPrinterEncoder;
     /**
      * Barcode
      *
@@ -1464,7 +1466,7 @@ declare class ReceiptPrinterEncoder {
      * @return {object}                  Return the object, for easy chaining commands
      *
      */
-    barcode(value: string, symbology: string | number, height?: number | BarcodeOptions): ReceiptPrinterEncoder;
+    barcode(value: string, symbology: string | number, height?: number | Partial<BarcodeOptions>): ReceiptPrinterEncoder;
     /**
      * QR code
      *
@@ -1476,7 +1478,7 @@ declare class ReceiptPrinterEncoder {
      *                                        either 'l', 'm', 'q', 'h'
      * @return {object}                       Return the object, for easy chaining commands
      */
-    qrcode(value: string, model?: QrCodeModel | QrCodeOptions, size?: QrCodeSize, errorlevel?: QrCodeErrorLevel): ReceiptPrinterEncoder;
+    qrcode(value: string, model?: QrCodeModel | Partial<QrCodeOptions>, size?: QrCodeSize, errorlevel?: QrCodeErrorLevel): ReceiptPrinterEncoder;
     /**
      * PDF417 code
      *
@@ -1485,7 +1487,7 @@ declare class ReceiptPrinterEncoder {
      * @return {object}                     Return the object, for easy chaining commands
      *
      */
-    pdf417(value: string, options: Pdf417Options): ReceiptPrinterEncoder;
+    pdf417(value: string, options: Partial<Pdf417Options>): ReceiptPrinterEncoder;
     /**
      * Image
      *
