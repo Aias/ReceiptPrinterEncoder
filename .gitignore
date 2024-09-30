@@ -2,6 +2,3 @@ node_modules
 .DS_Store
 examples/package-lock.json
 examples/_*
-
-dist
-generated
